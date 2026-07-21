@@ -36,9 +36,6 @@
     justify-content: center;
     gap: 18px;
   }
-  @media (max-width: 900px) {
-    .canvasRow { flex-direction: column; }
-  }
   #iconRail {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -81,7 +78,16 @@
     border-color: rgba(0, 255, 242, 0.5);
     box-shadow: 0 0 14px rgba(0, 255, 242, 0.4);
   }
-  .icon-group-gap { grid-column: 1 / -1; height: 2px; }
+  @media (max-width: 900px), (orientation: portrait) {
+    .canvasRow { flex-direction: column; align-items: center; }
+    #iconRail {
+      grid-template-columns: repeat(auto-fill, minmax(38px, 1fr));
+      width: 100%;
+      max-width: 460px;
+      max-height: none;
+      overflow-y: visible;
+    }
+  }
   #starCanvas {
     position: fixed;
     inset: 0;
@@ -737,9 +743,6 @@ function buildIconRail() {
   Array.from(typeSelect.children).forEach(node => {
     if (node.tagName === 'OPTGROUP') {
       Array.from(node.children).forEach(opt => iconRail.appendChild(makeIconBtn(opt)));
-      const gap = document.createElement('div');
-      gap.className = 'icon-group-gap';
-      iconRail.appendChild(gap);
     } else if (node.tagName === 'OPTION') {
       iconRail.appendChild(makeIconBtn(node));
     }
@@ -752,8 +755,9 @@ function syncIconRailActive(type) {
   });
 }
 
+const stackedLayoutQuery = window.matchMedia('(max-width: 900px), (orientation: portrait)');
 function syncIconRailHeight() {
-  iconRail.style.height = canvasWrap.offsetHeight + 'px';
+  iconRail.style.height = stackedLayoutQuery.matches ? '' : canvasWrap.offsetHeight + 'px';
 }
 window.addEventListener('resize', syncIconRailHeight);
 
