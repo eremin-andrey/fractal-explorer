@@ -35,6 +35,7 @@
     align-items: flex-start;
     justify-content: center;
     gap: 18px;
+    max-width: 100%;
   }
   #iconRail {
     display: grid;
@@ -42,6 +43,8 @@
     align-content: start;
     gap: 6px;
     overflow-y: auto;
+    min-width: 0;
+    max-width: calc(100vw - 32px);
     padding: 8px;
     background: rgba(14, 17, 34, 0.5);
     backdrop-filter: blur(14px);
@@ -83,7 +86,7 @@
     #iconRail {
       grid-template-columns: repeat(auto-fill, minmax(38px, 1fr));
       width: 100%;
-      max-width: 460px;
+      max-width: min(460px, calc(100vw - 32px));
       max-height: none;
       overflow-y: visible;
     }
@@ -138,7 +141,7 @@
     border: 1px solid rgba(0, 255, 242, 0.2);
     border-radius: 16px;
     padding: 14px 22px;
-    max-width: 800px;
+    max-width: min(800px, calc(100vw - 32px));
     box-shadow: 0 0 40px rgba(0, 255, 242, 0.07), inset 0 0 30px rgba(124, 77, 255, 0.06);
   }
   #controls label {
@@ -262,6 +265,11 @@
     color: #fff;
     box-shadow: inset 2px 0 0 var(--neon-cyan);
   }
+  @media (max-width: 420px) {
+    #controls { padding: 12px 14px; gap: 10px; }
+    .type-trigger { min-width: 0; }
+    .type-menu { min-width: 0; width: calc(100vw - 60px); max-width: 290px; }
+  }
   select {
     appearance: none;
     -webkit-appearance: none;
@@ -330,6 +338,8 @@
   }
   #canvasWrap {
     position: relative;
+    min-width: 0;
+    max-width: calc(100vw - 32px);
     border-radius: 16px;
     padding: 3px;
     background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple), var(--neon-magenta), var(--neon-cyan));
