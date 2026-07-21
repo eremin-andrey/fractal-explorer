@@ -1,0 +1,1605 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Фракталы</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --neon-cyan: #00fff2;
+    --neon-magenta: #ff2fd0;
+    --neon-purple: #7c4dff;
+    --text: #eafcff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: var(--text);
+    background:
+      radial-gradient(circle at 18% 15%, #22124a 0%, transparent 42%),
+      radial-gradient(circle at 82% 8%, #062240 0%, transparent 48%),
+      radial-gradient(circle at 50% 100%, #190a33 0%, transparent 55%),
+      linear-gradient(160deg, #05040d 0%, #0a0e21 50%, #0d0620 100%);
+    background-attachment: fixed;
+    overflow-x: hidden;
+    position: relative;
+  }
+  #starCanvas {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+    display: block;
+  }
+  .page {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    padding: 0 16px;
+  }
+  h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin: 32px 0 20px;
+    background: linear-gradient(90deg, var(--neon-cyan), var(--neon-purple), var(--neon-magenta), var(--neon-cyan));
+    background-size: 300% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: 0 0 40px rgba(0, 255, 242, 0.2);
+    animation: hueShift 7s linear infinite;
+  }
+  @keyframes hueShift {
+    to { background-position: 300% center; }
+  }
+  #controls {
+    position: relative;
+    z-index: 5;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+    background: rgba(14, 17, 34, 0.55);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid rgba(0, 255, 242, 0.2);
+    border-radius: 16px;
+    padding: 14px 22px;
+    max-width: 800px;
+    box-shadow: 0 0 40px rgba(0, 255, 242, 0.07), inset 0 0 30px rgba(124, 77, 255, 0.06);
+  }
+  #controls label {
+    font-size: 0.78rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #bcd6ff;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  #juliaControls, #kochControls, #mountainControls {
+    display: none;
+    align-items: center;
+    gap: 16px;
+  }
+  #depthVal, #juliaCReVal, #juliaCImVal, #kochAngleVal, #buildSpeedVal, #ridgeCountVal {
+    color: var(--neon-cyan);
+    font-weight: 700;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  #fractalType {
+    display: none;
+  }
+  .type-select {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .type-select-label {
+    font-size: 0.78rem;
+    color: #bcd6ff;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .type-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-width: 230px;
+    background-color: rgba(8, 12, 28, 0.65);
+    color: var(--text);
+    border: 1px solid rgba(0, 255, 242, 0.35);
+    border-radius: 8px;
+    padding: 7px 12px;
+    font-size: 0.82rem;
+    letter-spacing: 0.02em;
+    text-transform: none;
+    cursor: pointer;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+  .type-trigger:hover, .type-trigger.open {
+    border-color: var(--neon-cyan);
+    box-shadow: 0 0 14px rgba(0, 255, 242, 0.35);
+  }
+  .type-trigger-arrow {
+    width: 7px;
+    height: 7px;
+    border-right: 2px solid var(--neon-cyan);
+    border-bottom: 2px solid var(--neon-cyan);
+    transform: rotate(45deg);
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+  }
+  .type-trigger.open .type-trigger-arrow {
+    transform: rotate(-135deg);
+  }
+  .type-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    min-width: 290px;
+    max-height: 380px;
+    overflow-y: auto;
+    background: rgba(10, 13, 28, 0.94);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(0, 255, 242, 0.3);
+    border-radius: 12px;
+    padding: 8px;
+    box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5), 0 0 30px rgba(0, 255, 242, 0.15);
+    z-index: 20;
+    opacity: 0;
+    transform: translateY(-8px);
+    pointer-events: none;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+  }
+  .type-menu.open {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+  .type-menu::-webkit-scrollbar { width: 6px; }
+  .type-menu::-webkit-scrollbar-thumb { background: rgba(0, 255, 242, 0.3); border-radius: 3px; }
+  .type-group-label {
+    font-size: 0.64rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--neon-purple);
+    padding: 9px 10px 4px;
+    opacity: 0.9;
+  }
+  .type-group:first-child .type-group-label { padding-top: 4px; }
+  .type-option {
+    padding: 7px 10px;
+    border-radius: 7px;
+    font-size: 0.82rem;
+    color: #dfeeff;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .type-option:hover {
+    background: rgba(0, 255, 242, 0.14);
+    color: #fff;
+  }
+  .type-option.active {
+    background: linear-gradient(90deg, rgba(0, 255, 242, 0.22), rgba(255, 47, 208, 0.16));
+    color: #fff;
+    box-shadow: inset 2px 0 0 var(--neon-cyan);
+  }
+  select {
+    appearance: none;
+    -webkit-appearance: none;
+    background-color: rgba(8, 12, 28, 0.65);
+    color: var(--text);
+    border: 1px solid rgba(0, 255, 242, 0.35);
+    border-radius: 8px;
+    padding: 7px 30px 7px 12px;
+    font-size: 0.82rem;
+    letter-spacing: 0.02em;
+    background-image:
+      linear-gradient(45deg, transparent 50%, var(--neon-cyan) 50%),
+      linear-gradient(135deg, var(--neon-cyan) 50%, transparent 50%);
+    background-position: calc(100% - 18px) center, calc(100% - 13px) center;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+    cursor: pointer;
+  }
+  select:focus, input[type=range]:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0, 255, 242, 0.4);
+  }
+  button {
+    background: linear-gradient(135deg, rgba(0, 255, 242, 0.16), rgba(255, 47, 208, 0.16));
+    color: var(--text);
+    border: 1px solid rgba(0, 255, 242, 0.4);
+    border-radius: 8px;
+    padding: 7px 16px;
+    font-size: 0.8rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: box-shadow 0.25s ease, transform 0.25s ease, background 0.25s ease;
+  }
+  button:hover {
+    background: linear-gradient(135deg, rgba(0, 255, 242, 0.32), rgba(255, 47, 208, 0.32));
+    box-shadow: 0 0 18px rgba(0, 255, 242, 0.5);
+    transform: translateY(-1px);
+  }
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 140px;
+    height: 4px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--neon-cyan), var(--neon-magenta));
+    cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid var(--neon-cyan);
+    box-shadow: 0 0 10px 2px rgba(0, 255, 242, 0.7);
+    cursor: pointer;
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid var(--neon-cyan);
+    box-shadow: 0 0 10px 2px rgba(0, 255, 242, 0.7);
+    cursor: pointer;
+  }
+  #canvasWrap {
+    position: relative;
+    border-radius: 16px;
+    padding: 3px;
+    background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple), var(--neon-magenta), var(--neon-cyan));
+    background-size: 300% 300%;
+    animation: borderFlow 10s ease infinite;
+    box-shadow: 0 0 60px rgba(0, 255, 242, 0.22), 0 0 110px rgba(124, 77, 255, 0.14);
+  }
+  @keyframes borderFlow {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  canvas {
+    display: block;
+    background: #000;
+    border-radius: 13px;
+    cursor: grab;
+    max-width: 100%;
+    height: auto;
+  }
+  #dimInfo {
+    margin-top: 16px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.02em;
+    color: #9be8ff;
+    background: rgba(10, 14, 30, 0.55);
+    border-left: 3px solid var(--neon-cyan);
+    border-radius: 6px;
+    padding: 8px 14px;
+    max-width: 660px;
+    text-align: left;
+    box-shadow: 0 0 20px rgba(0, 255, 242, 0.08);
+  }
+  #dimInfo b { color: #fff; }
+  #historyInfo {
+    margin-top: 12px;
+    font-size: 0.8rem;
+    line-height: 1.55;
+    color: #d8c9ff;
+    background: rgba(10, 14, 30, 0.5);
+    border-left: 3px solid var(--neon-purple);
+    border-radius: 6px;
+    padding: 10px 14px;
+    max-width: 660px;
+    text-align: left;
+    box-shadow: 0 0 20px rgba(124, 77, 255, 0.1);
+  }
+  #historyInfo b { color: #fff; }
+  #historyInfo .fact { color: #ffcdf3; }
+  #hint {
+    font-size: 0.72rem;
+    color: #7488a8;
+    margin: 12px 0 32px;
+    text-align: center;
+    max-width: 600px;
+    letter-spacing: 0.02em;
+  }
+</style>
+</head>
+<body>
+<canvas id="starCanvas"></canvas>
+<div class="page">
+
+<h1>Фракталы</h1>
+
+<div id="controls">
+  <div class="type-select" id="typeSelectWrap">
+    <span class="type-select-label">Тип:</span>
+    <button type="button" id="typeTrigger" class="type-trigger" aria-haspopup="listbox" aria-expanded="false">
+      <span id="typeTriggerText">Множество Мандельброта</span>
+      <span class="type-trigger-arrow"></span>
+    </button>
+    <div id="typeMenu" class="type-menu" role="listbox"></div>
+    <select id="fractalType" tabindex="-1" aria-hidden="true">
+      <optgroup label="Комплексная плоскость">
+        <option value="mandelbrot">Множество Мандельброта</option>
+        <option value="julia">Множество Жюлиа</option>
+        <option value="burningship">Burning Ship</option>
+        <option value="multibrot">Мультиброт (z^n)</option>
+        <option value="newton">Фрактал Ньютона</option>
+      </optgroup>
+      <optgroup label="IFS / самоподобные фигуры">
+        <option value="sierpinski">Треугольник Серпинского</option>
+        <option value="carpet">Ковёр Серпинского</option>
+        <option value="fern">Папоротник Барнсли</option>
+      </optgroup>
+      <optgroup label="Кривые (L-системы)">
+        <option value="koch">Снежинка Коха</option>
+        <option value="gosper">Кривая Госпера</option>
+        <option value="hilbert">Кривая Гильберта</option>
+        <option value="peano">Кривая Пеано</option>
+        <option value="dragon">Дракон Хартера-Хейтуэя</option>
+        <option value="minkowski">Кривая Минковского</option>
+      </optgroup>
+      <optgroup label="Деревья и рекурсия">
+        <option value="tree">Дерево Пифагора</option>
+        <option value="htree">H-дерево</option>
+        <option value="cantor">Множество Кантора</option>
+        <option value="menger">Губка Менгера (проекция)</option>
+      </optgroup>
+      <optgroup label="Процедурные">
+        <option value="dla">Броуновское дерево (DLA)</option>
+        <option value="plasma">Плазма (diamond-square)</option>
+        <option value="flame">Фрактальное пламя</option>
+        <option value="mountains">Горная гряда</option>
+      </optgroup>
+    </select>
+  </div>
+
+  <label id="depthLabel"><span id="depthLabelText">Глубина</span>: <span id="depthVal">5</span>
+    <input type="range" id="depth" min="0" max="12" value="5">
+  </label>
+
+  <div id="juliaControls">
+    <label>Re(c): <span id="juliaCReVal">-0.700</span>
+      <input type="range" id="juliaCRe" min="-1.5" max="1.5" step="0.001" value="-0.7">
+    </label>
+    <label>Im(c): <span id="juliaCImVal">0.270</span>
+      <input type="range" id="juliaCIm" min="-1.5" max="1.5" step="0.001" value="0.27015">
+    </label>
+  </div>
+
+  <div id="kochControls">
+    <label>Угол излома: <span id="kochAngleVal">60</span>°
+      <input type="range" id="kochAngle" min="15" max="85" step="1" value="60">
+    </label>
+  </div>
+
+  <div id="mountainControls">
+    <label>Хребтов: <span id="ridgeCountVal">3</span>
+      <input type="range" id="ridgeCount" min="1" max="6" step="1" value="3">
+    </label>
+  </div>
+
+  <label>Скорость построения: <span id="buildSpeedVal">6</span>
+    <input type="range" id="buildSpeed" min="0" max="10" value="6">
+  </label>
+
+  <button id="resetBtn">Сбросить вид</button>
+</div>
+
+<div id="canvasWrap">
+  <canvas id="canvas" width="760" height="600"></canvas>
+</div>
+
+<div id="dimInfo"></div>
+<div id="historyInfo"></div>
+<div id="hint">Для фракталов на комплексной плоскости: колесо мыши — зум, перетаскивание — сдвиг.</div>
+</div>
+
+<script>
+(function starfield() {
+  const canvas = document.getElementById('starCanvas');
+  const ctx = canvas.getContext('2d');
+  let W, H, dpr;
+
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  const LAYERS = [
+    { count: 90, speed: 0.006, size: [0.5, 1.1], alpha: [0.2, 0.5] },
+    { count: 55, speed: 0.016, size: [0.8, 1.6], alpha: [0.35, 0.65] },
+    { count: 28, speed: 0.032, size: [1.2, 2.2], alpha: [0.5, 0.9] }
+  ];
+  let stars = [];
+
+  function initStars() {
+    stars = [];
+    for (const layer of LAYERS) {
+      for (let i = 0; i < layer.count; i++) {
+        stars.push({
+          x: Math.random() * W,
+          y: Math.random() * H,
+          r: layer.size[0] + Math.random() * (layer.size[1] - layer.size[0]),
+          baseAlpha: layer.alpha[0] + Math.random() * (layer.alpha[1] - layer.alpha[0]),
+          speed: layer.speed,
+          twinkleSpeed: 0.4 + Math.random() * 1.6,
+          phase: Math.random() * Math.PI * 2
+        });
+      }
+    }
+  }
+
+  window.addEventListener('resize', () => { resize(); initStars(); });
+  resize();
+  initStars();
+
+  let shooting = null;
+  function maybeSpawnShootingStar() {
+    if (!shooting && Math.random() < 0.0025) {
+      const x = Math.random() * W * 0.6;
+      const y = Math.random() * H * 0.25;
+      const angle = Math.PI / 4 + (Math.random() - 0.5) * 0.3;
+      shooting = { x, y, vx: Math.cos(angle) * 9, vy: Math.sin(angle) * 9, life: 1, trail: [] };
+    }
+  }
+
+  function frame(t) {
+    ctx.clearRect(0, 0, W, H);
+
+    for (const s of stars) {
+      s.y += s.speed;
+      if (s.y > H) { s.y = 0; s.x = Math.random() * W; }
+      const tw = 0.5 + 0.5 * Math.sin(t * 0.001 * s.twinkleSpeed + s.phase);
+      const alpha = s.baseAlpha * (0.4 + 0.6 * tw);
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255,255,255,${alpha.toFixed(3)})`;
+      ctx.fill();
+    }
+
+    maybeSpawnShootingStar();
+    if (shooting) {
+      shooting.trail.push({ x: shooting.x, y: shooting.y });
+      if (shooting.trail.length > 14) shooting.trail.shift();
+      shooting.x += shooting.vx;
+      shooting.y += shooting.vy;
+      shooting.life -= 0.012;
+      for (let i = 0; i < shooting.trail.length; i++) {
+        const p = shooting.trail[i];
+        const a = (i / shooting.trail.length) * shooting.life;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 1.4, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(180,240,255,${a.toFixed(3)})`;
+        ctx.fill();
+      }
+      if (shooting.life <= 0 || shooting.x > W + 50 || shooting.y > H + 50) shooting = null;
+    }
+
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const typeSelect = document.getElementById('fractalType');
+const depthInput = document.getElementById('depth');
+const depthVal = document.getElementById('depthVal');
+const depthLabel = document.getElementById('depthLabel');
+const depthLabelText = document.getElementById('depthLabelText');
+const resetBtn = document.getElementById('resetBtn');
+const hint = document.getElementById('hint');
+const dimInfo = document.getElementById('dimInfo');
+const historyInfo = document.getElementById('historyInfo');
+const juliaControls = document.getElementById('juliaControls');
+const juliaCRe = document.getElementById('juliaCRe');
+const juliaCIm = document.getElementById('juliaCIm');
+const juliaCReVal = document.getElementById('juliaCReVal');
+const juliaCImVal = document.getElementById('juliaCImVal');
+const kochControls = document.getElementById('kochControls');
+const kochAngle = document.getElementById('kochAngle');
+const kochAngleVal = document.getElementById('kochAngleVal');
+const buildSpeed = document.getElementById('buildSpeed');
+const buildSpeedVal = document.getElementById('buildSpeedVal');
+const mountainControls = document.getElementById('mountainControls');
+const ridgeCount = document.getElementById('ridgeCount');
+const ridgeCountVal = document.getElementById('ridgeCountVal');
+
+const W = canvas.width, H = canvas.height;
+
+const ESCAPE_TYPES = new Set(['mandelbrot', 'julia', 'burningship', 'multibrot', 'newton']);
+const RANDOM_TYPES = new Set(['dla', 'plasma', 'flame', 'mountains']);
+
+// ---------- Custom type dropdown ----------
+const typeTrigger = document.getElementById('typeTrigger');
+const typeTriggerText = document.getElementById('typeTriggerText');
+const typeMenu = document.getElementById('typeMenu');
+
+function makeTypeOption(opt) {
+  const el = document.createElement('div');
+  el.className = 'type-option';
+  el.dataset.value = opt.value;
+  el.setAttribute('role', 'option');
+  el.textContent = opt.textContent;
+  el.addEventListener('click', () => {
+    typeSelect.value = opt.value;
+    typeSelect.dispatchEvent(new Event('change'));
+    closeTypeMenu();
+  });
+  return el;
+}
+
+function buildTypeMenu() {
+  typeMenu.innerHTML = '';
+  Array.from(typeSelect.children).forEach(node => {
+    if (node.tagName === 'OPTGROUP') {
+      const group = document.createElement('div');
+      group.className = 'type-group';
+      const label = document.createElement('div');
+      label.className = 'type-group-label';
+      label.textContent = node.label;
+      group.appendChild(label);
+      Array.from(node.children).forEach(opt => group.appendChild(makeTypeOption(opt)));
+      typeMenu.appendChild(group);
+    } else if (node.tagName === 'OPTION') {
+      typeMenu.appendChild(makeTypeOption(node));
+    }
+  });
+}
+
+function openTypeMenu() {
+  typeMenu.classList.add('open');
+  typeTrigger.classList.add('open');
+  typeTrigger.setAttribute('aria-expanded', 'true');
+}
+function closeTypeMenu() {
+  typeMenu.classList.remove('open');
+  typeTrigger.classList.remove('open');
+  typeTrigger.setAttribute('aria-expanded', 'false');
+}
+typeTrigger.addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (typeMenu.classList.contains('open')) closeTypeMenu(); else openTypeMenu();
+});
+document.addEventListener('click', (e) => {
+  if (!typeMenu.contains(e.target) && e.target !== typeTrigger) closeTypeMenu();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeTypeMenu();
+});
+
+function syncTypeMenuActive(type) {
+  typeTriggerText.textContent = typeSelect.options[typeSelect.selectedIndex].textContent;
+  typeMenu.querySelectorAll('.type-option').forEach(el => {
+    el.classList.toggle('active', el.dataset.value === type);
+  });
+}
+
+buildTypeMenu();
+
+const DIMENSION_INFO = {
+  mandelbrot: 'D = 2 (граница множества, теорема Шишикуры)',
+  julia: 'зависит от параметра c; общей формулы нет (обычно между 1 и 2)',
+  burningship: 'аналитически неизвестна (граница фрактальна, точного значения нет)',
+  multibrot: 'зависит от степени n; замкнутой формулы для границы нет',
+  newton: 'границы бассейнов притяжения фрактальны, точного значения нет',
+  sierpinski: 'D = log 3 / log 2 ≈ 1.585',
+  carpet: 'D = log 8 / log 3 ≈ 1.893',
+  fern: 'D ≈ 1 (аффинный IFS с разными коэффициентами сжатия — формула подобия впрямую не применима)',
+  koch: 'D = log 4 / log 3 ≈ 1.262 (не зависит от угла излома — по-прежнему 4 копии масштаба 1/3)',
+  gosper: 'D = log 7 / log √7 = 2 (в пределе плотно заполняет область плоскости)',
+  hilbert: 'D = log 4 / log 2 = 2 (классическая заполняющая плоскость кривая)',
+  peano: 'D = log 9 / log 3 = 2 (классическая заполняющая плоскость кривая)',
+  dragon: 'D = log 2 / log √2 = 2 (в пределе плотно заполняет область плоскости)',
+  minkowski: 'D = log 8 / log 4 = 1.5',
+  tree: 'нет точной формулы — ветви самопересекаются, простая формула подобия не применима',
+  htree: 'D = 2 (плотно заполняет плоскость при большой глубине)',
+  cantor: 'D = log 2 / log 3 ≈ 0.631',
+  menger: 'D = log 20 / log 3 ≈ 2.727 (объёмный фрактал)',
+  dla: 'D ≈ 1.71 (эмпирическое значение для двумерной DLA-агрегации)',
+  plasma: 'зависит от коэффициента шероховатости; типично D ≈ 2.5 для такой поверхности',
+  flame: 'нет единой формулы — зависит от параметров аффинных преобразований',
+  mountains: 'D = 2 - H, где H — показатель Хёрста; для профиля хребта обычно D ≈ 1.3-1.5 — как у настоящих горных силуэтов'
+};
+
+const HISTORY_INFO = {
+  mandelbrot: {
+    author: 'Бенуа Мандельброт, 1980, IBM',
+    name: 'Названо в его честь Адриеном Дуади в 1985 — сам Мандельброт скромно называл его просто «множество µ»',
+    fact: 'Это множество значений c, при которых связно соответствующее множество Жюлиа — граница между «целыми» и «распылёнными» фракталами Жюлиа'
+  },
+  julia: {
+    author: 'Гастон Жюлиа и Пьер Фату, независимо друг от друга, 1917–1918',
+    name: 'Названо в честь Жюлиа — он был тяжело ранен на фронте Первой мировой войны и написал свою работу об итерациях, лёжа в госпитале',
+    fact: '200-страничный мемуар Жюлиа получил Гран-при Французской академии наук в 1918-м, но был почти забыт — пока Мандельброт не визуализировал его на компьютере IBM 60 лет спустя'
+  },
+  burningship: {
+    author: 'Майкл Мичелич и Отто Рёсслер, 1992',
+    name: 'Название придумали за характерный силуэт — фрактал похож на пылающий корабль с отражением в воде',
+    fact: 'Отличается от Мандельброта всего одной операцией — модулем действительной и мнимой части перед возведением в квадрат, но даёт совершенно другую, угловатую геометрию'
+  },
+  multibrot: {
+    author: 'Обобщение на z→zⁿ+c изучали многие; среди первых — Адриен Дуади и Джон Хаббард в 1980-х',
+    name: '«Мультиброт» — неформальный термин по аналогии с «Мандельброт», для любой степени n',
+    fact: 'При n→∞ фигура стремится к единичной окружности — чем выше степень, тем «круглее» и симметричнее становится фрактал'
+  },
+  newton: {
+    author: 'Метод — Исаак Ньютон, XVII век; фрактальность его границ впервые заметил Артур Кэли в 1879-м',
+    name: 'Назван по методу Ньютона — итеративному способу поиска корней уравнения',
+    fact: 'Кэли не смог решить задачу для кубических уравнений и оставил её открытой почти на 100 лет — компьютерная графика 1980-х показала, что причина в фрактальной границе бассейнов притяжения'
+  },
+  sierpinski: {
+    author: 'Вацлав Серпиньский, польский математик, 1915',
+    name: 'Назван в его честь',
+    fact: 'Похожие узоры встречаются в мозаиках итальянских соборов XII века (стиль косматеско) и в треугольнике Паскаля — если закрасить только нечётные числа'
+  },
+  carpet: {
+    author: 'Вацлав Серпиньский, 1916',
+    name: 'Квадратный аналог его же треугольника',
+    fact: 'Ковёр Серпинского содержит топологическую копию любой плоской кривой — универсальный объект среди одномерных кривых на плоскости'
+  },
+  fern: {
+    author: 'Майкл Барнсли, 1988, книга «Fractals Everywhere»',
+    name: 'Назван в его честь — «папоротник Барнсли»',
+    fact: 'Всего 4 простых линейных преобразования с разной вероятностью выбора создают удивительно похожий на настоящий лист черного щитовника'
+  },
+  koch: {
+    author: 'Хельге фон Кох, шведский математик, 1904',
+    name: 'Назван по фамилии автора; форма «снежинки» получается из-за трёхкратного применения кривой к сторонам треугольника',
+    fact: 'Один из первых известных примеров кривой, непрерывной всюду, но нигде не дифференцируемой — при этом её периметр бесконечен, а площадь внутри конечна'
+  },
+  gosper: {
+    author: 'Билл Госпер, математик и программист MIT, 1970-е',
+    name: 'Второе название — «flowsnake», шуточная анаграмма-каламбур хакеров MIT от «Gosper»',
+    fact: 'Госпер придумал её, изучая заполняющие плоскость кривые на правильной шестиугольной решётке — отсюда угол поворота 60°'
+  },
+  hilbert: {
+    author: 'Давид Гильберт, немецкий математик, 1891',
+    name: 'Назван в его честь — предложил более наглядный вариант кривой Пеано',
+    fact: 'Используется не только в математике: кривая Гильберта применяется для оптимизации доступа к данным в базах и обработки изображений — соседние точки на кривой почти всегда соседи и в 2D'
+  },
+  peano: {
+    author: 'Джузеппе Пеано, итальянский математик, 1890',
+    name: 'Названа в его честь — первая в истории открытая заполняющая пространство кривая',
+    fact: 'Открытие потрясло математиков конца XIX века: одномерная кривая непрерывно заполняет весь квадрат — казалось, это противоречит самому понятию размерности'
+  },
+  dragon: {
+    author: 'Физики NASA Джон Хейтуэй, Брюс Бэнкс и Уильям Хартер, 1960-е',
+    name: 'Полное название — «дракон Хартера-Хейтуэя», по фамилиям первооткрывателей',
+    fact: 'Популяризировал фрактал Мартин Гарднер в Scientific American в 1967-м; кривую можно построить, просто складывая бумажную полоску пополам много раз в одну сторону'
+  },
+  minkowski: {
+    author: 'Назван в честь Германа Минковского, немецкого математика (создателя пространства-времени в теории относительности)',
+    name: '«Колбаса Минковского» — от его же метода измерения длины кривой через утолщение (Minkowski content)',
+    fact: 'Формой напоминает зубчатую городскую стену — из-за прямых углов её иногда называют «фрактальным лабиринтом»'
+  },
+  tree: {
+    author: 'Альберт Э. Босман, нидерландский учитель математики, 1942',
+    name: 'Названо «деревом Пифагора», потому что в основе каждого разветвления лежит прямоугольный треугольник с квадратами на сторонах — геометрическая иллюстрация теоремы Пифагора',
+    fact: 'Классический вариант (с квадратами, а не линиями, как у нас) при бесконечном числе итераций умещается в ограниченную область конечной площади'
+  },
+  htree: {
+    author: 'Нет одного автора — простая рекурсивная конструкция, известная с середины XX века',
+    name: 'Названо по форме каждого элемента — букве «H»',
+    fact: 'Используется не только как фрактал: H-дерево — стандартная схема разводки тактового сигнала в микрочипах, чтобы все точки были на одинаковом расстоянии от источника'
+  },
+  cantor: {
+    author: 'Георг Кантор, немецкий математик, 1883 (похожую идею уже в 1875-м упоминал Генри Смит)',
+    name: 'Назван в честь Кантора — использовал его как пример для теории множеств',
+    fact: 'Множество имеет нулевую «длину», но при этом несчётно бесконечно — точек в нём столько же, сколько во всех действительных числах'
+  },
+  menger: {
+    author: 'Карл Менгер, австрийский математик, 1926',
+    name: 'Назван в его честь — придумал, изучая топологическую теорию размерности',
+    fact: 'Имеет нулевой объём, но бесконечную площадь поверхности; крупнейшую физическую модель построили из более чем миллиона визитных карточек'
+  },
+  dla: {
+    author: 'Томас Уиттен и Леонард Сандер, физики, 1981',
+    name: 'DLA = Diffusion-Limited Aggregation, «агрегация, ограниченная диффузией» — по механизму роста',
+    fact: 'Моделирует настоящие природные процессы: рост дендритов минералов на камнях, электроосаждение металлов, фигуры Лихтенберга от молнии'
+  },
+  plasma: {
+    author: 'Алгоритм diamond-square описали Ален Фурнье, Дон Фассел и Лорен Карпентер в 1982-м',
+    name: '«Плазма» — неформальное прозвище за облачно-переливчатый вид, похожий на плазменную лампу',
+    fact: 'Придумывался для генерации реалистичных гор и ландшафтов в компьютерной графике — использовался в ранних играх вроде Populous'
+  },
+  flame: {
+    author: 'Скотт Дрейвз, 1992',
+    name: '«Фрактальное пламя» — за характерные языки и переливы, похожие на огонь',
+    fact: 'Легло в основу проекта «Electric Sheep» (название — отсылка к роману Филипа Дика) — распределённого скринсейвера, где тысячи компьютеров выращивают и «скрещивают» пламена по вкусу пользователей с 1999 года'
+  },
+  mountains: {
+    author: 'Идею фрактального броуновского движения для рельефа предложил Бенуа Мандельброт в книге «The Fractal Geometry of Nature» (1977); алгоритм для компьютерной графики оформили Ален Фурнье, Дон Фассел и Лорен Карпентер в 1982',
+    name: 'Тот же принцип, что и у плазмы (diamond-square), но в одномерном варианте — вместо сетки высот строится один изрезанный профиль хребта',
+    fact: 'Мандельброт показал, что у побережий и горных хребтов нет характерного масштаба — они выглядят одинаково изрезанными что на карте всего мира, что при взгляде с вершины: это и есть фрактальное самоподобие в природе'
+  }
+};
+
+const SLIDER_CONFIG = {
+  mandelbrot: { label: 'Итераций', min: 50, max: 500, def: 150 },
+  julia: { label: 'Итераций', min: 50, max: 500, def: 150 },
+  burningship: { label: 'Итераций', min: 50, max: 500, def: 150 },
+  multibrot: { label: 'Степень n', min: 2, max: 6, def: 3 },
+  newton: { label: 'Итераций (макс)', min: 10, max: 100, def: 40 },
+  sierpinski: { label: 'Глубина', min: 0, max: 8, def: 5 },
+  carpet: { label: 'Глубина', min: 0, max: 5, def: 3 },
+  fern: { label: 'Точек (×1000)', min: 2, max: 100, def: 40 },
+  koch: { label: 'Глубина', min: 0, max: 6, def: 4 },
+  gosper: { label: 'Итераций', min: 0, max: 5, def: 4 },
+  hilbert: { label: 'Итераций', min: 1, max: 7, def: 5 },
+  peano: { label: 'Итераций', min: 1, max: 4, def: 3 },
+  dragon: { label: 'Итераций', min: 1, max: 16, def: 12 },
+  minkowski: { label: 'Итераций', min: 0, max: 4, def: 3 },
+  tree: { label: 'Глубина', min: 0, max: 12, def: 9 },
+  htree: { label: 'Глубина', min: 0, max: 9, def: 6 },
+  cantor: { label: 'Глубина', min: 0, max: 9, def: 7 },
+  menger: { label: 'Глубина', min: 0, max: 3, def: 2 },
+  dla: { label: 'Частиц (×100)', min: 2, max: 40, def: 20 },
+  plasma: { label: 'Детализация', min: 2, max: 9, def: 7 },
+  flame: { label: 'Точек (×1000)', min: 5, max: 200, def: 60 },
+  mountains: { label: 'Детализация', min: 2, max: 9, def: 8 }
+};
+
+// --- viewport state for escape-time fractals ---
+let view = {};
+function defaultView(type) {
+  if (type === 'mandelbrot') return { cx: -0.5, cy: 0, scale: 3.2 };
+  if (type === 'burningship') return { cx: -0.4, cy: -0.6, scale: 3.2 };
+  return { cx: 0, cy: 0, scale: 3.2 }; // julia, multibrot, newton
+}
+
+function updateControlsForType(type) {
+  const cfg = SLIDER_CONFIG[type];
+  depthLabel.style.display = cfg ? 'flex' : 'none';
+  if (cfg) {
+    depthInput.min = cfg.min;
+    depthInput.max = cfg.max;
+    depthInput.value = cfg.def;
+    depthLabelText.textContent = cfg.label;
+  }
+  const isEscape = ESCAPE_TYPES.has(type);
+  hint.style.display = isEscape ? 'block' : 'none';
+  canvas.style.cursor = isEscape ? 'grab' : 'default';
+  if (isEscape) {
+    resetBtn.textContent = 'Сбросить вид';
+    resetBtn.style.display = 'inline-block';
+  } else if (RANDOM_TYPES.has(type)) {
+    resetBtn.textContent = 'Новая генерация';
+    resetBtn.style.display = 'inline-block';
+  } else {
+    resetBtn.style.display = 'none';
+  }
+  juliaControls.style.display = type === 'julia' ? 'flex' : 'none';
+  kochControls.style.display = type === 'koch' ? 'flex' : 'none';
+  mountainControls.style.display = type === 'mountains' ? 'flex' : 'none';
+  dimInfo.innerHTML = 'Размерность: <b>' + (DIMENSION_INFO[type] || '—') + '</b>';
+  const hi = HISTORY_INFO[type];
+  historyInfo.innerHTML = hi
+    ? `<div><b>Автор:</b> ${hi.author}</div><div><b>Название:</b> ${hi.name}</div><div class="fact"><b>Факт:</b> ${hi.fact}</div>`
+    : '';
+  syncTypeMenuActive(type);
+}
+
+function draw() {
+  const type = typeSelect.value;
+  const depth = parseInt(depthInput.value, 10);
+  depthVal.textContent = depth;
+
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, W, H);
+
+  switch (type) {
+    case 'mandelbrot': drawComplexFamily('mandelbrot'); break;
+    case 'julia': drawComplexFamily('julia'); break;
+    case 'burningship': drawComplexFamily('burningship'); break;
+    case 'multibrot': drawComplexFamily('multibrot'); break;
+    case 'newton': drawNewton(); break;
+    case 'sierpinski': drawSierpinski(depth); break;
+    case 'carpet': drawCarpet(depth); break;
+    case 'fern': drawFern(depth * 1000); break;
+    case 'koch': drawKoch(depth); break;
+    case 'gosper': drawGosperCurve(depth); break;
+    case 'hilbert': drawHilbertCurve(depth); break;
+    case 'peano': drawPeanoCurve(depth); break;
+    case 'dragon': drawDragonCurve(depth); break;
+    case 'minkowski': drawMinkowskiCurve(depth); break;
+    case 'tree': drawTree(depth); break;
+    case 'htree': drawHTree(depth); break;
+    case 'cantor': drawCantor(depth); break;
+    case 'menger': drawMenger(depth); break;
+    case 'dla': drawDLA(depth * 100); break;
+    case 'plasma': drawPlasma(depth); break;
+    case 'flame': drawFlame(depth * 1000); break;
+    case 'mountains': drawMountains(depth, parseInt(ridgeCount.value, 10)); break;
+  }
+}
+
+// ---------- Animated construction (build-speed) ----------
+let buildTimer = null;
+let buildToken = 0;
+
+function animateBuild(type) {
+  clearTimeout(buildTimer);
+  const token = ++buildToken;
+  const speed = parseInt(buildSpeed.value, 10);
+  const cfg = SLIDER_CONFIG[type];
+  const targetVal = parseInt(depthInput.value, 10);
+
+  if (speed === 0 || !cfg || targetVal <= cfg.min) {
+    draw();
+    return;
+  }
+
+  const minVal = cfg.min;
+  const steps = Math.min(20, targetVal - minVal);
+  const stepDelay = Math.max(15, 260 - speed * 24);
+  let i = 0;
+
+  function stepFn() {
+    if (token !== buildToken) return;
+    i++;
+    depthInput.value = i >= steps ? targetVal : minVal + Math.round((targetVal - minVal) * i / steps);
+    draw();
+    if (i < steps) buildTimer = setTimeout(stepFn, stepDelay);
+  }
+  stepFn();
+}
+
+// ---------- Mandelbrot / Julia / Burning Ship / Multibrot ----------
+function drawComplexFamily(kind) {
+  const maxIter = kind === 'multibrot' ? 100 : parseInt(depthInput.value, 10);
+  const img = ctx.createImageData(W, H);
+  const { cx, cy, scale } = view;
+  const aspect = H / W;
+  const jx = parseFloat(juliaCRe.value), jy = parseFloat(juliaCIm.value);
+  const n = kind === 'multibrot' ? parseInt(depthInput.value, 10) : 2;
+
+  for (let px = 0; px < W; px++) {
+    for (let py = 0; py < H; py++) {
+      const x0 = cx + (px / W - 0.5) * scale;
+      const y0 = cy + (py / H - 0.5) * scale * aspect;
+      let x, y, cxi, cyi;
+      if (kind === 'julia') { x = x0; y = y0; cxi = jx; cyi = jy; }
+      else { x = 0; y = 0; cxi = x0; cyi = y0; }
+
+      let iter = 0;
+      while (x * x + y * y <= 4 && iter < maxIter) {
+        let xt, yt;
+        if (kind === 'burningship') {
+          const ax = Math.abs(x), ay = Math.abs(y);
+          xt = ax * ax - ay * ay + cxi;
+          yt = 2 * ax * ay + cyi;
+        } else if (kind === 'multibrot' && n !== 2) {
+          let zx = 1, zy = 0;
+          for (let k = 0; k < n; k++) {
+            const nzx = zx * x - zy * y;
+            const nzy = zx * y + zy * x;
+            zx = nzx; zy = nzy;
+          }
+          xt = zx + cxi;
+          yt = zy + cyi;
+        } else {
+          xt = x * x - y * y + cxi;
+          yt = 2 * x * y + cyi;
+        }
+        x = xt; y = yt;
+        iter++;
+      }
+      const idx = (py * W + px) * 4;
+      setColor(img.data, idx, iter, maxIter);
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
+function setColor(data, idx, iter, maxIter) {
+  if (iter === maxIter) {
+    data[idx] = data[idx+1] = data[idx+2] = 0;
+  } else {
+    const t = iter / maxIter;
+    data[idx]   = Math.floor(9 * (1 - t) * t * t * t * 255);
+    data[idx+1] = Math.floor(15 * (1 - t) * (1 - t) * t * t * 255);
+    data[idx+2] = Math.floor(8.5 * (1 - t) * (1 - t) * (1 - t) * t * 255);
+  }
+  data[idx+3] = 255;
+}
+
+// ---------- Newton fractal (roots of z^3 - 1) ----------
+function drawNewton() {
+  const maxIter = parseInt(depthInput.value, 10);
+  const img = ctx.createImageData(W, H);
+  const { cx, cy, scale } = view;
+  const aspect = H / W;
+  const roots = [{ x: 1, y: 0 }, { x: -0.5, y: Math.sqrt(3) / 2 }, { x: -0.5, y: -Math.sqrt(3) / 2 }];
+  const rootColors = [[255, 120, 80], [100, 220, 140], [100, 160, 255]];
+
+  for (let px = 0; px < W; px++) {
+    for (let py = 0; py < H; py++) {
+      let x = cx + (px / W - 0.5) * scale;
+      let y = cy + (py / H - 0.5) * scale * aspect;
+      let iter = 0;
+      for (; iter < maxIter; iter++) {
+        const x2 = x * x - y * y, y2 = 2 * x * y;
+        const x3 = x2 * x - y2 * y, y3 = x2 * y + y2 * x;
+        const fx = x3 - 1, fy = y3;
+        const dx = 3 * x2, dy = 3 * y2;
+        const denom = dx * dx + dy * dy;
+        if (denom < 1e-12) break;
+        const qx = (fx * dx + fy * dy) / denom;
+        const qy = (fy * dx - fx * dy) / denom;
+        const nx = x - qx, ny = y - qy;
+        const converged = Math.hypot(nx - x, ny - y) < 1e-6;
+        x = nx; y = ny;
+        if (converged) break;
+      }
+      let best = 0, bestD = Infinity;
+      for (let r = 0; r < 3; r++) {
+        const d = (x - roots[r].x) ** 2 + (y - roots[r].y) ** 2;
+        if (d < bestD) { bestD = d; best = r; }
+      }
+      const shade = Math.max(0.25, 1 - iter / maxIter);
+      const idx = (py * W + px) * 4;
+      const col = rootColors[best];
+      img.data[idx] = col[0] * shade;
+      img.data[idx+1] = col[1] * shade;
+      img.data[idx+2] = col[2] * shade;
+      img.data[idx+3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
+// ---------- Sierpinski triangle ----------
+function drawSierpinski(depth) {
+  const points = [{ x: W / 2, y: 40 }, { x: 60, y: H - 40 }, { x: W - 60, y: H - 40 }];
+  function mid(a, b) { return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }; }
+  const d = Math.min(depth, 8);
+  const hue = 190 + d * 8;
+
+  function subdivide(p0, p1, p2, depthLeft) {
+    if (depthLeft === 0) {
+      ctx.fillStyle = `hsl(${hue}, 75%, 62%)`;
+      ctx.beginPath();
+      ctx.moveTo(p0.x, p0.y);
+      ctx.lineTo(p1.x, p1.y);
+      ctx.lineTo(p2.x, p2.y);
+      ctx.closePath();
+      ctx.fill();
+      return;
+    }
+    const m01 = mid(p0, p1), m12 = mid(p1, p2), m02 = mid(p0, p2);
+    subdivide(p0, m01, m02, depthLeft - 1);
+    subdivide(m01, p1, m12, depthLeft - 1);
+    subdivide(m02, m12, p2, depthLeft - 1);
+  }
+  subdivide(points[0], points[1], points[2], d);
+}
+
+// ---------- Sierpinski carpet ----------
+function drawCarpet(depth) {
+  const d = Math.min(depth, 5);
+  const size = Math.min(W, H) - 40;
+  const x0 = (W - size) / 2, y0 = (H - size) / 2;
+  ctx.fillStyle = '#e0a458';
+  function rec(x, y, s, depthLeft) {
+    if (depthLeft === 0) { ctx.fillRect(x, y, s, s); return; }
+    const ns = s / 3;
+    for (let i = 0; i < 3; i++) {
+      for (let j = 0; j < 3; j++) {
+        if (i === 1 && j === 1) continue;
+        rec(x + i * ns, y + j * ns, ns, depthLeft - 1);
+      }
+    }
+  }
+  rec(x0, y0, size, d);
+}
+
+// ---------- Barnsley fern ----------
+function drawFern(numPoints) {
+  let x = 0, y = 0;
+  const margin = 20;
+  const scale = (H - 2 * margin) / 10;
+  const offX = W / 2, offY = H - margin;
+  const img = ctx.createImageData(W, H);
+  for (let i = 0; i < numPoints; i++) {
+    const r = Math.random();
+    let nx, ny;
+    if (r < 0.01) { nx = 0; ny = 0.16 * y; }
+    else if (r < 0.86) { nx = 0.85 * x + 0.04 * y; ny = -0.04 * x + 0.85 * y + 1.6; }
+    else if (r < 0.93) { nx = 0.2 * x - 0.26 * y; ny = 0.23 * x + 0.22 * y + 1.6; }
+    else { nx = -0.15 * x + 0.28 * y; ny = 0.26 * x + 0.24 * y + 0.44; }
+    x = nx; y = ny;
+    const px = Math.round(offX + x * scale);
+    const py = Math.round(offY - y * scale);
+    if (px >= 0 && px < W && py >= 0 && py < H) {
+      const idx = (py * W + px) * 4;
+      img.data[idx] = 60 + Math.random() * 40;
+      img.data[idx+1] = 160 + Math.random() * 60;
+      img.data[idx+2] = 70;
+      img.data[idx+3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
+// ---------- Koch snowflake ----------
+function drawKoch(depth) {
+  const d = Math.min(depth, 6);
+  const turnRad = parseFloat(kochAngle.value) * Math.PI / 180;
+  const cx = W / 2, cy = H / 2, r = 220;
+  const p1 = { x: cx, y: cy - r };
+  const p2 = { x: cx - r * Math.sin(Math.PI / 3), y: cy + r / 2 };
+  const p3 = { x: cx + r * Math.sin(Math.PI / 3), y: cy + r / 2 };
+
+  ctx.strokeStyle = '#7fe0c0';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  kochLine(p1, p2, d);
+  kochLine(p2, p3, d);
+  kochLine(p3, p1, d);
+  ctx.stroke();
+
+  function kochLine(a, b, depthLeft) {
+    if (depthLeft === 0) {
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      return;
+    }
+    const dx = (b.x - a.x) / 3, dy = (b.y - a.y) / 3;
+    const pA = a;
+    const pB = { x: a.x + dx, y: a.y + dy };
+    const pD = { x: a.x + 2 * dx, y: a.y + 2 * dy };
+    const pE = b;
+    const angle = Math.atan2(dy, dx) - turnRad;
+    const len = Math.hypot(dx, dy);
+    const pC = { x: pB.x + len * Math.cos(angle), y: pB.y + len * Math.sin(angle) };
+    kochLine(pA, pB, depthLeft - 1);
+    kochLine(pB, pC, depthLeft - 1);
+    kochLine(pC, pD, depthLeft - 1);
+    kochLine(pD, pE, depthLeft - 1);
+  }
+}
+
+// ---------- Shared L-system / turtle engine ----------
+function lsystemExpand(axiom, rules, n) {
+  let s = axiom;
+  for (let i = 0; i < n; i++) {
+    let out = '';
+    for (const ch of s) out += (rules[ch] !== undefined) ? rules[ch] : ch;
+    s = out;
+  }
+  return s;
+}
+
+function turtlePoints(cmds, angleDeg, startDeg, drawChars) {
+  let heading = startDeg * Math.PI / 180;
+  const angleRad = angleDeg * Math.PI / 180;
+  let x = 0, y = 0;
+  const pts = [{ x, y }];
+  for (const ch of cmds) {
+    if (drawChars.has(ch)) {
+      x += Math.cos(heading);
+      y += Math.sin(heading);
+      pts.push({ x, y });
+    } else if (ch === '+') heading += angleRad;
+    else if (ch === '-') heading -= angleRad;
+  }
+  return pts;
+}
+
+function drawLSystemCurve(pts, color) {
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  for (const p of pts) {
+    if (p.x < minX) minX = p.x;
+    if (p.x > maxX) maxX = p.x;
+    if (p.y < minY) minY = p.y;
+    if (p.y > maxY) maxY = p.y;
+  }
+  const w = (maxX - minX) || 1, h = (maxY - minY) || 1;
+  const margin = 30;
+  const scale = Math.min((W - 2 * margin) / w, (H - 2 * margin) / h);
+  const offX = (W - w * scale) / 2 - minX * scale;
+  const offY = (H - h * scale) / 2 - minY * scale;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x * scale + offX, pts[0].y * scale + offY);
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x * scale + offX, pts[i].y * scale + offY);
+  ctx.stroke();
+}
+
+function drawGosperCurve(depth) {
+  const s = lsystemExpand('A', { A: 'A-B--B+A++AA+B-', B: '+A-BB--B-A++A+B' }, Math.min(depth, 5));
+  drawLSystemCurve(turtlePoints(s, 60, 0, new Set(['A', 'B'])), '#ff9d5c');
+}
+
+function drawHilbertCurve(depth) {
+  const s = lsystemExpand('A', { A: '-BF+AFA+FB-', B: '+AF-BFB-FA+' }, Math.min(depth, 7));
+  drawLSystemCurve(turtlePoints(s, 90, 0, new Set(['F'])), '#5cd6ff');
+}
+
+function drawPeanoCurve(depth) {
+  const s = lsystemExpand('L', { L: 'LFRFL-F-RFLFR+F+LFRFL', R: 'RFLFR+F+LFRFL-F-RFLFR' }, Math.min(depth, 4));
+  drawLSystemCurve(turtlePoints(s, 90, 0, new Set(['F'])), '#c792ea');
+}
+
+function drawDragonCurve(depth) {
+  const s = lsystemExpand('FX', { X: 'X+YF+', Y: '-FX-Y' }, Math.min(depth, 16));
+  drawLSystemCurve(turtlePoints(s, 90, 0, new Set(['F'])), '#ff6ec7');
+}
+
+function drawMinkowskiCurve(depth) {
+  const s = lsystemExpand('F', { F: 'F+F-F-FF+F+F-F' }, Math.min(depth, 4));
+  drawLSystemCurve(turtlePoints(s, 90, 0, new Set(['F'])), '#9be15d');
+}
+
+// ---------- Pythagoras tree ----------
+function drawTree(depth) {
+  const d = Math.min(depth, 12);
+  function branch(x, y, len, angle, depthLeft) {
+    if (depthLeft === 0 || len < 2) return;
+    const x2 = x + len * Math.cos(angle);
+    const y2 = y - len * Math.sin(angle);
+    const hue = 90 + depthLeft * 6;
+    ctx.strokeStyle = `hsl(${hue}, 60%, ${40 + depthLeft * 3}%)`;
+    ctx.lineWidth = Math.max(1, depthLeft * 0.7);
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+    branch(x2, y2, len * 0.72, angle - 0.45, depthLeft - 1);
+    branch(x2, y2, len * 0.72, angle + 0.35, depthLeft - 1);
+  }
+  branch(W / 2, H - 20, 110, Math.PI / 2, d);
+}
+
+// ---------- H-tree ----------
+function drawHTree(depth) {
+  const d = Math.min(depth, 9);
+  ctx.strokeStyle = '#e6c15c';
+  ctx.lineWidth = 1.5;
+  function rec(cx, cy, size, depthLeft) {
+    if (depthLeft < 0 || size < 2) return;
+    const x1 = cx - size, x2 = cx + size, y1 = cy - size, y2 = cy + size;
+    ctx.beginPath();
+    ctx.moveTo(x1, cy); ctx.lineTo(x2, cy);
+    ctx.moveTo(x1, y1); ctx.lineTo(x1, y2);
+    ctx.moveTo(x2, y1); ctx.lineTo(x2, y2);
+    ctx.stroke();
+    rec(x1, y1, size / 2, depthLeft - 1);
+    rec(x1, y2, size / 2, depthLeft - 1);
+    rec(x2, y1, size / 2, depthLeft - 1);
+    rec(x2, y2, size / 2, depthLeft - 1);
+  }
+  rec(W / 2, H / 2, 200, d);
+}
+
+// ---------- Cantor set ----------
+function drawCantor(depth) {
+  const d = Math.min(depth, 9);
+  ctx.strokeStyle = '#c792ea';
+  ctx.lineWidth = 6;
+  const rowH = (H - 60) / (d + 1);
+  function rec(x1, x2, level) {
+    const y = 40 + level * rowH;
+    ctx.beginPath();
+    ctx.moveTo(x1, y); ctx.lineTo(x2, y);
+    ctx.stroke();
+    if (level >= d) return;
+    const w = (x2 - x1) / 3;
+    rec(x1, x1 + w, level + 1);
+    rec(x2 - w, x2, level + 1);
+  }
+  rec(40, W - 40, 0);
+}
+
+// ---------- Menger sponge (isometric projection) ----------
+function drawMenger(depth) {
+  const d = Math.min(depth, 3);
+  const size0 = 160;
+  const cos30 = Math.cos(Math.PI / 6), sin30 = Math.sin(Math.PI / 6);
+
+  function project(x, y, z) {
+    return { sx: W / 2 + (x - z) * cos30, sy: H / 2 + 60 - ((x + z) * sin30 - y) };
+  }
+  function drawFace(pts, color) {
+    ctx.fillStyle = color;
+    ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+    ctx.beginPath();
+    ctx.moveTo(pts[0].sx, pts[0].sy);
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].sx, pts[i].sy);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  }
+  function drawCube(x, y, z, size, depthLeft) {
+    if (depthLeft === 0) {
+      const p = (dx, dy, dz) => project(x + dx, y + dy, z + dz);
+      const s = size;
+      drawFace([p(0, s, 0), p(s, s, 0), p(s, s, s), p(0, s, s)], '#8fd3ff');
+      drawFace([p(0, 0, 0), p(0, s, 0), p(0, s, s), p(0, 0, s)], '#4a90c4');
+      drawFace([p(s, 0, 0), p(s, s, 0), p(s, s, s), p(s, 0, s)], '#6cb2e0');
+      return;
+    }
+    const ns = size / 3;
+    for (let ix = 0; ix < 3; ix++) {
+      for (let iy = 0; iy < 3; iy++) {
+        for (let iz = 0; iz < 3; iz++) {
+          const onesCount = (ix === 1 ? 1 : 0) + (iy === 1 ? 1 : 0) + (iz === 1 ? 1 : 0);
+          if (onesCount >= 2) continue; // skip face centers + core
+          drawCube(x + ix * ns, y + iy * ns, z + iz * ns, ns, depthLeft - 1);
+        }
+      }
+    }
+  }
+  drawCube(-size0 / 2, -size0 / 2, -size0 / 2, size0, d);
+}
+
+// ---------- Brownian tree (DLA) ----------
+function drawDLA(numParticles) {
+  const n = Math.min(numParticles, 4000);
+  const occupied = new Set(['0,0']);
+  const pointsX = [0], pointsY = [0];
+  let maxR = 3;
+  const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  const bound = 400;
+  const maxSteps = 3000;
+
+  for (let i = 0; i < n; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    let x = Math.round(Math.cos(angle) * (maxR + 8));
+    let y = Math.round(Math.sin(angle) * (maxR + 8));
+    for (let steps = 0; steps < maxSteps; steps++) {
+      let attached = false;
+      for (const [dx, dy] of dirs) {
+        if (occupied.has((x + dx) + ',' + (y + dy))) { attached = true; break; }
+      }
+      if (attached) {
+        occupied.add(x + ',' + y);
+        pointsX.push(x); pointsY.push(y);
+        const r = Math.hypot(x, y);
+        if (r > maxR) maxR = r;
+        break;
+      }
+      const d = dirs[(Math.random() * 4) | 0];
+      x += d[0]; y += d[1];
+      const r = Math.hypot(x, y);
+      if (r > maxR + 20 || r > bound) break;
+    }
+  }
+
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  for (let i = 0; i < pointsX.length; i++) {
+    if (pointsX[i] < minX) minX = pointsX[i];
+    if (pointsX[i] > maxX) maxX = pointsX[i];
+    if (pointsY[i] < minY) minY = pointsY[i];
+    if (pointsY[i] > maxY) maxY = pointsY[i];
+  }
+  const w = (maxX - minX) || 1, h = (maxY - minY) || 1;
+  const margin = 20;
+  const scale = Math.min((W - 2 * margin) / w, (H - 2 * margin) / h);
+  const offX = (W - w * scale) / 2 - minX * scale;
+  const offY = (H - h * scale) / 2 - minY * scale;
+  const dotSize = Math.max(1, scale);
+
+  ctx.fillStyle = '#7fe0c0';
+  for (let i = 0; i < pointsX.length; i++) {
+    ctx.fillRect(pointsX[i] * scale + offX, pointsY[i] * scale + offY, dotSize, dotSize);
+  }
+}
+
+// ---------- Plasma (diamond-square) ----------
+function drawPlasma(depth) {
+  const nlevels = Math.min(depth, 9);
+  const size = Math.pow(2, nlevels) + 1;
+  const grid = new Float32Array(size * size);
+  const get = (x, y) => grid[y * size + x];
+  const set = (x, y, v) => { grid[y * size + x] = v; };
+
+  set(0, 0, Math.random());
+  set(size - 1, 0, Math.random());
+  set(0, size - 1, Math.random());
+  set(size - 1, size - 1, Math.random());
+
+  let step = size - 1;
+  let roughness = 0.9;
+  while (step > 1) {
+    const half = step / 2;
+    for (let y = half; y < size; y += step) {
+      for (let x = half; x < size; x += step) {
+        const avg = (get(x - half, y - half) + get(x + half, y - half) + get(x - half, y + half) + get(x + half, y + half)) / 4;
+        set(x, y, avg + (Math.random() * 2 - 1) * roughness);
+      }
+    }
+    for (let y = 0; y < size; y += half) {
+      for (let x = (Math.round(y / half) % 2 === 0) ? half : 0; x < size; x += step) {
+        let sum = 0, cnt = 0;
+        if (x - half >= 0) { sum += get(x - half, y); cnt++; }
+        if (x + half < size) { sum += get(x + half, y); cnt++; }
+        if (y - half >= 0) { sum += get(x, y - half); cnt++; }
+        if (y + half < size) { sum += get(x, y + half); cnt++; }
+        set(x, y, sum / cnt + (Math.random() * 2 - 1) * roughness);
+      }
+    }
+    step = half;
+    roughness *= 0.55;
+  }
+
+  let min = Infinity, max = -Infinity;
+  for (let i = 0; i < grid.length; i++) { if (grid[i] < min) min = grid[i]; if (grid[i] > max) max = grid[i]; }
+  const range = (max - min) || 1;
+  const img = ctx.createImageData(W, H);
+  for (let py = 0; py < H; py++) {
+    const gy = Math.min(size - 1, Math.floor(py / H * size));
+    for (let px = 0; px < W; px++) {
+      const gx = Math.min(size - 1, Math.floor(px / W * size));
+      const t = (get(gx, gy) - min) / range;
+      const idx = (py * W + px) * 4;
+      img.data[idx]   = Math.floor(255 * Math.pow(t, 1.5));
+      img.data[idx+1] = Math.floor(255 * Math.sin(Math.min(1, Math.max(0, t)) * Math.PI));
+      img.data[idx+2] = Math.floor(255 * Math.pow(1 - t, 1.2));
+      img.data[idx+3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
+// ---------- Fractal flame (simplified) ----------
+function drawFlame(numPoints) {
+  const n = Math.min(numPoints, 200000);
+  const transforms = [
+    { a: 0.5, b: 0, c: 0, d: 0, e: 0.5, f: 0, color: [255, 120, 80], weight: 0.34 },
+    { a: 0.5, b: 0, c: 0.5, d: 0, e: 0.5, f: 0, color: [100, 200, 255], weight: 0.33 },
+    { a: 0.5, b: 0, c: 0, d: 0, e: 0.5, f: 0.5, color: [150, 255, 140], weight: 0.33 }
+  ];
+  let cum = 0;
+  for (const t of transforms) { cum += t.weight; t.cum = cum; }
+
+  function swirl(x, y) {
+    const r2 = x * x + y * y;
+    const s = Math.sin(r2), c = Math.cos(r2);
+    return [x * s - y * c, x * c + y * s];
+  }
+
+  const xs = new Float32Array(n);
+  const ys = new Float32Array(n);
+  const colorIdx = new Uint8Array(n);
+  let count = 0;
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+
+  let x = Math.random(), y = Math.random();
+  for (let i = 0; i < n; i++) {
+    const r = Math.random() * cum;
+    let ti = transforms.length - 1;
+    for (let k = 0; k < transforms.length; k++) { if (r <= transforms[k].cum) { ti = k; break; } }
+    const tr = transforms[ti];
+    let nx = tr.a * x + tr.b * y + tr.c;
+    let ny = tr.d * x + tr.e * y + tr.f;
+    const [sx, sy] = swirl(nx, ny);
+    nx = (nx + sx) / 2; ny = (ny + sy) / 2;
+    x = nx; y = ny;
+    if (i < 20) continue;
+    xs[count] = x; ys[count] = y; colorIdx[count] = ti;
+    if (x < minX) minX = x; if (x > maxX) maxX = x;
+    if (y < minY) minY = y; if (y > maxY) maxY = y;
+    count++;
+  }
+
+  const w = (maxX - minX) || 1, h = (maxY - minY) || 1;
+  const margin = 20;
+  const scale = Math.min((W - 2 * margin) / w, (H - 2 * margin) / h);
+  const offX = (W - w * scale) / 2 - minX * scale;
+  const offY = (H - h * scale) / 2 - minY * scale;
+
+  const density = new Float32Array(W * H);
+  const rAcc = new Float32Array(W * H);
+  const gAcc = new Float32Array(W * H);
+  const bAcc = new Float32Array(W * H);
+  for (let i = 0; i < count; i++) {
+    const px = Math.floor(xs[i] * scale + offX);
+    const py = Math.floor(ys[i] * scale + offY);
+    if (px < 0 || px >= W || py < 0 || py >= H) continue;
+    const idx = py * W + px;
+    const col = transforms[colorIdx[i]].color;
+    density[idx]++;
+    rAcc[idx] += col[0];
+    gAcc[idx] += col[1];
+    bAcc[idx] += col[2];
+  }
+
+  let maxD = 0;
+  for (let i = 0; i < density.length; i++) if (density[i] > maxD) maxD = density[i];
+  const logMax = Math.log(maxD + 1) || 1;
+
+  const img = ctx.createImageData(W, H);
+  for (let i = 0; i < density.length; i++) {
+    const d = density[i];
+    if (d === 0) continue;
+    const t = Math.log(d + 1) / logMax;
+    const idx = i * 4;
+    img.data[idx]   = Math.min(255, (rAcc[i] / d) * t);
+    img.data[idx+1] = Math.min(255, (gAcc[i] / d) * t);
+    img.data[idx+2] = Math.min(255, (bAcc[i] / d) * t);
+    img.data[idx+3] = 255;
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
+// ---------- Mountain range (1D midpoint displacement) ----------
+function drawMountains(depth, count) {
+  const nlevels = Math.min(depth, 9);
+  const size = Math.pow(2, nlevels);
+  const n = Math.max(1, Math.min(count, 6));
+
+  function ridge(amplitude, roughness) {
+    const h = new Float32Array(size + 1);
+    h[0] = (Math.random() * 2 - 1) * amplitude;
+    h[size] = (Math.random() * 2 - 1) * amplitude;
+    let step = size, disp = amplitude;
+    while (step > 1) {
+      const half = step / 2;
+      for (let i = half; i < size; i += step) {
+        const avg = (h[i - half] + h[i + half]) / 2;
+        h[i] = avg + (Math.random() * 2 - 1) * disp;
+      }
+      disp *= roughness;
+      step = half;
+    }
+    return h;
+  }
+
+  const sky = ctx.createLinearGradient(0, 0, 0, H);
+  sky.addColorStop(0, '#050318');
+  sky.addColorStop(0.6, '#170b34');
+  sky.addColorStop(1, '#2c1348');
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, W, H);
+
+  const mx = W * 0.78, my = H * 0.22, mr = 34;
+  const moonGlow = ctx.createRadialGradient(mx, my, 0, mx, my, mr * 4);
+  moonGlow.addColorStop(0, 'rgba(200,230,255,0.35)');
+  moonGlow.addColorStop(1, 'rgba(200,230,255,0)');
+  ctx.fillStyle = moonGlow;
+  ctx.beginPath(); ctx.arc(mx, my, mr * 4, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#eaf6ff';
+  ctx.beginPath(); ctx.arc(mx, my, mr, 0, Math.PI * 2); ctx.fill();
+
+  const rimColors = ['rgba(124,77,255,0.35)', 'rgba(0,255,242,0.3)', 'rgba(255,47,208,0.28)', 'rgba(255,180,80,0.25)', 'rgba(120,255,180,0.25)', 'rgba(255,240,120,0.22)'];
+
+  for (let i = 0; i < n; i++) {
+    const t = n > 1 ? i / (n - 1) : 0;
+    const baseY = H * (0.56 + 0.36 * t);
+    const amp = H * (0.06 + 0.16 * t);
+    const roughness = 0.48 + 0.18 * t;
+    const lightness = 26 - 22 * t;
+    const color = `hsl(255, 45%, ${lightness}%)`;
+    const rim = rimColors[i % rimColors.length];
+
+    const h = ridge(amp, roughness);
+    ctx.beginPath();
+    ctx.moveTo(0, baseY - h[0]);
+    for (let px = 1; px <= size; px++) ctx.lineTo((px / size) * W, baseY - h[px]);
+    ctx.strokeStyle = rim;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.lineTo(W, H);
+    ctx.lineTo(0, H);
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+  }
+}
+
+// ---------- Interaction: pan & zoom for escape-time fractals ----------
+let dragging = false, lastX = 0, lastY = 0;
+
+canvas.addEventListener('wheel', (e) => {
+  if (!ESCAPE_TYPES.has(typeSelect.value)) return;
+  e.preventDefault();
+  const factor = e.deltaY > 0 ? 1.2 : 1 / 1.2;
+  view.scale *= factor;
+  draw();
+}, { passive: false });
+
+canvas.addEventListener('mousedown', (e) => {
+  if (!ESCAPE_TYPES.has(typeSelect.value)) return;
+  dragging = true;
+  lastX = e.clientX;
+  lastY = e.clientY;
+  canvas.style.cursor = 'grabbing';
+});
+window.addEventListener('mouseup', () => {
+  dragging = false;
+  if (ESCAPE_TYPES.has(typeSelect.value)) canvas.style.cursor = 'grab';
+});
+window.addEventListener('mousemove', (e) => {
+  if (!dragging) return;
+  const dx = e.clientX - lastX;
+  const dy = e.clientY - lastY;
+  lastX = e.clientX;
+  lastY = e.clientY;
+  view.cx -= (dx / W) * view.scale;
+  view.cy -= (dy / H) * view.scale * (H / W);
+  draw();
+});
+
+typeSelect.addEventListener('change', () => {
+  const type = typeSelect.value;
+  updateControlsForType(type);
+  if (ESCAPE_TYPES.has(type)) view = defaultView(type);
+  animateBuild(type);
+});
+depthInput.addEventListener('input', () => {
+  buildToken++;
+  draw();
+});
+juliaCRe.addEventListener('input', () => {
+  buildToken++;
+  juliaCReVal.textContent = parseFloat(juliaCRe.value).toFixed(3);
+  draw();
+});
+juliaCIm.addEventListener('input', () => {
+  buildToken++;
+  juliaCImVal.textContent = parseFloat(juliaCIm.value).toFixed(3);
+  draw();
+});
+kochAngle.addEventListener('input', () => {
+  buildToken++;
+  kochAngleVal.textContent = kochAngle.value;
+  draw();
+});
+buildSpeed.addEventListener('input', () => {
+  buildSpeedVal.textContent = buildSpeed.value;
+});
+ridgeCount.addEventListener('input', () => {
+  buildToken++;
+  ridgeCountVal.textContent = ridgeCount.value;
+  draw();
+});
+resetBtn.addEventListener('click', () => {
+  const type = typeSelect.value;
+  if (ESCAPE_TYPES.has(type)) view = defaultView(type);
+  animateBuild(type);
+});
+
+updateControlsForType(typeSelect.value);
+view = defaultView(typeSelect.value);
+animateBuild(typeSelect.value);
+</script>
+</body>
+</html>
