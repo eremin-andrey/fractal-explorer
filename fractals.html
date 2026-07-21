@@ -92,12 +92,12 @@
     text-transform: uppercase;
     letter-spacing: 0.06em;
   }
-  #juliaControls, #kochControls, #mountainControls {
+  #juliaControls, #kochControls, #mountainControls, #polyControls {
     display: none;
     align-items: center;
     gap: 16px;
   }
-  #depthVal, #juliaCReVal, #juliaCImVal, #kochAngleVal, #buildSpeedVal, #ridgeCountVal {
+  #depthVal, #juliaCReVal, #juliaCImVal, #kochAngleVal, #buildSpeedVal, #ridgeCountVal, #ratioBVal {
     color: var(--neon-cyan);
     font-weight: 700;
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -325,10 +325,21 @@
   #hint {
     font-size: 0.72rem;
     color: #7488a8;
-    margin: 12px 0 32px;
+    margin: 12px 0 10px;
     text-align: center;
     max-width: 600px;
     letter-spacing: 0.02em;
+  }
+  #footer {
+    font-size: 0.72rem;
+    color: #5a6a8a;
+    margin: 0 0 32px;
+    text-align: center;
+    letter-spacing: 0.04em;
+  }
+  #footer b {
+    color: #9db4d9;
+    font-weight: 600;
   }
 </style>
 </head>
@@ -378,6 +389,7 @@
         <option value="plasma">Плазма (diamond-square)</option>
         <option value="flame">Фрактальное пламя</option>
         <option value="mountains">Горная гряда</option>
+        <option value="polyspiral">Многоугольная спираль</option>
       </optgroup>
     </select>
   </div>
@@ -407,6 +419,12 @@
     </label>
   </div>
 
+  <div id="polyControls">
+    <label>Отношение сторон: 1 : <span id="ratioBVal">10</span>
+      <input type="range" id="ratioB" min="1" max="30" step="1" value="10">
+    </label>
+  </div>
+
   <label>Скорость построения: <span id="buildSpeedVal">6</span>
     <input type="range" id="buildSpeed" min="0" max="10" value="6">
   </label>
@@ -421,6 +439,7 @@
 <div id="dimInfo"></div>
 <div id="historyInfo"></div>
 <div id="hint">Для фракталов на комплексной плоскости: колесо мыши — зум, перетаскивание — сдвиг.</div>
+<div id="footer">Автор: <b>Андрей Ерёмин</b> · Соавтор: <b>Claude</b> ;-)</div>
 </div>
 
 <script>
@@ -539,11 +558,14 @@ const buildSpeedVal = document.getElementById('buildSpeedVal');
 const mountainControls = document.getElementById('mountainControls');
 const ridgeCount = document.getElementById('ridgeCount');
 const ridgeCountVal = document.getElementById('ridgeCountVal');
+const polyControls = document.getElementById('polyControls');
+const ratioB = document.getElementById('ratioB');
+const ratioBVal = document.getElementById('ratioBVal');
 
 const W = canvas.width, H = canvas.height;
 
 const ESCAPE_TYPES = new Set(['mandelbrot', 'julia', 'burningship', 'multibrot', 'newton']);
-const RANDOM_TYPES = new Set(['dla', 'plasma', 'flame', 'mountains']);
+const RANDOM_TYPES = new Set(['dla', 'plasma', 'flame', 'mountains', 'polyspiral']);
 
 // ---------- Custom type dropdown ----------
 const typeTrigger = document.getElementById('typeTrigger');
@@ -634,7 +656,8 @@ const DIMENSION_INFO = {
   dla: 'D ≈ 1.71 (эмпирическое значение для двумерной DLA-агрегации)',
   plasma: 'зависит от коэффициента шероховатости; типично D ≈ 2.5 для такой поверхности',
   flame: 'нет единой формулы — зависит от параметров аффинных преобразований',
-  mountains: 'D = 2 - H, где H — показатель Хёрста; для профиля хребта обычно D ≈ 1.3-1.5 — как у настоящих горных силуэтов'
+  mountains: 'D = 2 - H, где H — показатель Хёрста; для профиля хребта обычно D ≈ 1.3-1.5 — как у настоящих горных силуэтов',
+  polyspiral: 'формально не фрактал в строгом смысле — счётное объединение обычных многоугольников (D = 1), но самоподобная спираль за счёт постоянного коэффициента сжатия на каждом шаге'
 };
 
 const HISTORY_INFO = {
@@ -747,6 +770,11 @@ const HISTORY_INFO = {
     author: 'Идею фрактального броуновского движения для рельефа предложил Бенуа Мандельброт в книге «The Fractal Geometry of Nature» (1977); алгоритм для компьютерной графики оформили Ален Фурнье, Дон Фассел и Лорен Карпентер в 1982',
     name: 'Тот же принцип, что и у плазмы (diamond-square), но в одномерном варианте — вместо сетки высот строится один изрезанный профиль хребта',
     fact: 'Мандельброт показал, что у побережий и горных хребтов нет характерного масштаба — они выглядят одинаково изрезанными что на карте всего мира, что при взгляде с вершины: это и есть фрактальное самоподобие в природе'
+  },
+  polyspiral: {
+    author: 'Классический пример из геометрии и линейной алгебры; систематически исследовал французский математик Гастон Дарбу в 1878 году (случай деления пополам иногда называют «задачей Дарбу»)',
+    name: 'Устоявшегося общепринятого названия нет — здесь мы называем результат «многоугольной спиралью» по виду фигуры',
+    fact: 'Какой бы ни была исходная фигура, спираль стремится к эллипсу: все «многоугольные» гармоники формы затухают с разной скоростью, и быстрее всех выживает ровно пара сопряжённых — а сумма именно двух таких вращающихся гармоник и есть параметрическое уравнение эллипса (строго через собственные числа циркулянтных матриц это показал П. Дж. Дэвис в книге Circulant Matrices, 1979)'
   }
 };
 
@@ -772,7 +800,8 @@ const SLIDER_CONFIG = {
   dla: { label: 'Частиц (×100)', min: 2, max: 40, def: 20 },
   plasma: { label: 'Детализация', min: 2, max: 9, def: 7 },
   flame: { label: 'Точек (×1000)', min: 5, max: 200, def: 60 },
-  mountains: { label: 'Детализация', min: 2, max: 9, def: 8 }
+  mountains: { label: 'Детализация', min: 2, max: 9, def: 8 },
+  polyspiral: { label: 'Итераций', min: 5, max: 250, def: 120 }
 };
 
 // --- viewport state for escape-time fractals ---
@@ -807,6 +836,7 @@ function updateControlsForType(type) {
   juliaControls.style.display = type === 'julia' ? 'flex' : 'none';
   kochControls.style.display = type === 'koch' ? 'flex' : 'none';
   mountainControls.style.display = type === 'mountains' ? 'flex' : 'none';
+  polyControls.style.display = type === 'polyspiral' ? 'flex' : 'none';
   dimInfo.innerHTML = 'Размерность: <b>' + (DIMENSION_INFO[type] || '—') + '</b>';
   const hi = HISTORY_INFO[type];
   historyInfo.innerHTML = hi
@@ -846,6 +876,7 @@ function draw() {
     case 'plasma': drawPlasma(depth); break;
     case 'flame': drawFlame(depth * 1000); break;
     case 'mountains': drawMountains(depth, parseInt(ridgeCount.value, 10)); break;
+    case 'polyspiral': drawPolygonSpiral(depth, parseInt(ratioB.value, 10)); break;
   }
 }
 
@@ -1525,6 +1556,85 @@ function drawMountains(depth, count) {
   }
 }
 
+// ---------- Polygon spiral (iterated side-division polygons) ----------
+function convexHull(points) {
+  const pts = points.slice().sort((a, b) => a.x - b.x || a.y - b.y);
+  const cross = (o, a, b) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+  const lower = [];
+  for (const p of pts) {
+    while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) lower.pop();
+    lower.push(p);
+  }
+  const upper = [];
+  for (let i = pts.length - 1; i >= 0; i--) {
+    const p = pts[i];
+    while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) upper.pop();
+    upper.push(p);
+  }
+  lower.pop(); upper.pop();
+  return lower.concat(upper);
+}
+
+let polySpiralHull = null;
+function generatePolygonHull() {
+  let hull = [];
+  while (hull.length < 5) {
+    const raw = [];
+    const count = 10 + Math.floor(Math.random() * 6);
+    for (let i = 0; i < count; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const r = 0.6 + Math.random() * 0.4;
+      raw.push({ x: Math.cos(a) * r, y: Math.sin(a) * r });
+    }
+    hull = convexHull(raw);
+  }
+  polySpiralHull = hull;
+}
+
+function drawPolygonSpiral(depth, b) {
+  const iterations = Math.min(depth, 250);
+  const t = 1 / (1 + b);
+  if (!polySpiralHull) generatePolygonHull();
+  const hull = polySpiralHull;
+
+  const allPolys = [hull];
+  let current = hull;
+  for (let i = 1; i < iterations; i++) {
+    const next = [];
+    for (let k = 0; k < current.length; k++) {
+      const p = current[k], q = current[(k + 1) % current.length];
+      next.push({ x: p.x + (q.x - p.x) * t, y: p.y + (q.y - p.y) * t });
+    }
+    allPolys.push(next);
+    current = next;
+  }
+
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  for (const p of hull) {
+    if (p.x < minX) minX = p.x; if (p.x > maxX) maxX = p.x;
+    if (p.y < minY) minY = p.y; if (p.y > maxY) maxY = p.y;
+  }
+  const w = (maxX - minX) || 1, h2 = (maxY - minY) || 1;
+  const margin = 40;
+  const scale = Math.min((W - 2 * margin) / w, (H - 2 * margin) / h2);
+  const offX = (W - w * scale) / 2 - minX * scale;
+  const offY = (H - h2 * scale) / 2 - minY * scale;
+
+  for (let i = 0; i < allPolys.length; i++) {
+    const poly = allPolys[i];
+    const hue = (190 + (i / allPolys.length) * 300) % 360;
+    ctx.strokeStyle = `hsl(${hue}, 85%, 65%)`;
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    for (let k = 0; k <= poly.length; k++) {
+      const p = poly[k % poly.length];
+      const x = p.x * scale + offX, y = p.y * scale + offY;
+      if (k === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+}
+
 // ---------- Interaction: pan & zoom for escape-time fractals ----------
 let dragging = false, lastX = 0, lastY = 0;
 
@@ -1562,6 +1672,7 @@ typeSelect.addEventListener('change', () => {
   const type = typeSelect.value;
   updateControlsForType(type);
   if (ESCAPE_TYPES.has(type)) view = defaultView(type);
+  if (type === 'polyspiral') generatePolygonHull();
   animateBuild(type);
 });
 depthInput.addEventListener('input', () => {
@@ -1591,9 +1702,15 @@ ridgeCount.addEventListener('input', () => {
   ridgeCountVal.textContent = ridgeCount.value;
   draw();
 });
+ratioB.addEventListener('input', () => {
+  buildToken++;
+  ratioBVal.textContent = ratioB.value;
+  draw();
+});
 resetBtn.addEventListener('click', () => {
   const type = typeSelect.value;
   if (ESCAPE_TYPES.has(type)) view = defaultView(type);
+  if (type === 'polyspiral') generatePolygonHull();
   animateBuild(type);
 });
 
