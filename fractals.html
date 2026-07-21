@@ -30,6 +30,58 @@
     overflow-x: hidden;
     position: relative;
   }
+  .canvasRow {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 18px;
+  }
+  @media (max-width: 900px) {
+    .canvasRow { flex-direction: column; }
+  }
+  #iconRail {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    align-content: start;
+    gap: 6px;
+    overflow-y: auto;
+    padding: 8px;
+    background: rgba(14, 17, 34, 0.5);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(0, 255, 242, 0.15);
+    border-radius: 16px;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.35);
+  }
+  #iconRail::-webkit-scrollbar { width: 5px; }
+  #iconRail::-webkit-scrollbar-thumb { background: rgba(0, 255, 242, 0.25); border-radius: 3px; }
+  .icon-btn {
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 11px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.02);
+    color: rgba(200, 220, 255, 0.55);
+    cursor: pointer;
+    transition: color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+  }
+  .icon-btn svg { width: 24px; height: 24px; display: block; }
+  .icon-btn:hover {
+    color: #fff;
+    background: rgba(0, 255, 242, 0.12);
+    border-color: rgba(0, 255, 242, 0.3);
+    transform: scale(1.08);
+  }
+  .icon-btn.active {
+    color: #fff;
+    background: linear-gradient(135deg, rgba(0, 255, 242, 0.3), rgba(255, 47, 208, 0.22));
+    border-color: rgba(0, 255, 242, 0.5);
+    box-shadow: 0 0 14px rgba(0, 255, 242, 0.4);
+  }
+  .icon-group-gap { grid-column: 1 / -1; height: 2px; }
   #starCanvas {
     position: fixed;
     inset: 0;
@@ -432,8 +484,11 @@
   <button id="resetBtn">Сбросить вид</button>
 </div>
 
-<div id="canvasWrap">
-  <canvas id="canvas" width="760" height="600"></canvas>
+<div class="canvasRow">
+  <div id="iconRail"></div>
+  <div id="canvasWrap">
+    <canvas id="canvas" width="760" height="600"></canvas>
+  </div>
 </div>
 
 <div id="dimInfo"></div>
@@ -535,6 +590,7 @@
 })();
 
 const canvas = document.getElementById('canvas');
+const canvasWrap = document.getElementById('canvasWrap');
 const ctx = canvas.getContext('2d');
 const typeSelect = document.getElementById('fractalType');
 const depthInput = document.getElementById('depth');
@@ -633,6 +689,75 @@ function syncTypeMenuActive(type) {
 }
 
 buildTypeMenu();
+
+// ---------- Left icon rail ----------
+const ICONS = {
+  mandelbrot: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="12" r="6.2"/><circle cx="16.5" cy="12" r="3.4"/></svg>',
+  julia: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3c4 1 6 4 5 7-1 2-4 2-4 4 0 2 3 2 3 4-1 2-4 2-6 1"/></svg>',
+  burningship: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M4 19 L12 5 L20 19 Z"/><path d="M9 19 L9 13 M15 19 L15 11"/></svg>',
+  multibrot: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><polygon points="12,3 19,7.5 19,16.5 12,21 5,16.5 5,7.5"/></svg>',
+  newton: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="5" r="2"/><circle cx="5" cy="18" r="2"/><circle cx="19" cy="18" r="2"/><path d="M12 7 L12 14 M12 14 L6.5 16.5 M12 14 L17.5 16.5"/></svg>',
+  sierpinski: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M12 4 L20 20 L4 20 Z"/><path d="M12 12 L16 20 L8 20 Z"/></svg>',
+  carpet: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="4" y="4" width="16" height="16"/><rect x="10" y="10" width="4" height="4"/><path d="M4 10.6h16M4 15.3h16M10.6 4v16M15.3 4v16"/></svg>',
+  fern: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M12 21 V5"/><path d="M12 16 L7 12M12 16 L17 12M12 11 L8 8M12 11 L16 8M12 6.5 L9.5 5"/></svg>',
+  koch: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><path d="M4 18 L8 18 L9.5 15.5 L11 18 L13 18 L14.5 15.5 L16 18 L20 18 L12 4 Z"/></svg>',
+  gosper: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><path d="M4 9 L8 6 L13 7 L15 4 L19 6 L18 10 L20 14 L16 16 L15 20 L11 18 L7 19 L6 15 L3 13 Z"/></svg>',
+  hilbert: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 5 V9 H9 V5 M9 9 V19 M9 12 H15 M15 5 V9 H19 V5 M15 19 V15 H19 V19"/></svg>',
+  peano: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M4 5 H8 V9 H4 V13 H8 V17 H4 V21 M8 5 H12 V9 M12 9 H8 M8 13 H12 V17 H8"/></svg>',
+  dragon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12 H8 V8 H12 V12 H16 V16 H12 V20"/></svg>',
+  minkowski: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 16 H6 V12 H9 V16 H11 V8 H14 V16 H16 V12 H19 V16 H21"/></svg>',
+  tree: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M12 21 V13"/><path d="M12 13 L8 8M12 13 L16 8M8 8 L5.5 4.5M8 8 L10 4M16 8 L14 4M16 8 L18.5 4.5"/></svg>',
+  htree: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 5 V19 M18 5 V19 M6 12 H18"/><path d="M3 5 V8 M3 5 H6M3 8H6 M3 16 V19 M3 16 H6 M3 19 H6 M21 5 V8 M18 5 H21 M18 8 H21 M21 16 V19 M18 16 H21 M18 19 H21" stroke-width="1"/></svg>',
+  cantor: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 5 H21"/><path d="M3 10.3 H9.7 M14.3 10.3 H21"/><path d="M3 15.6 H5.2 M7.5 15.6 H9.7 M14.3 15.6 H16.5 M18.8 15.6 H21"/></svg>',
+  menger: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><path d="M4 8 L9 5 L20 5 L20 16 L15 19 L4 19 Z"/><path d="M4 8 L15 8 L15 19 M15 8 L20 5 M4 8 V19"/><rect x="9" y="11" width="3" height="3"/></svg>',
+  dla: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M12 20 V13 M12 13 L8 10 M12 13 L15 9 M8 10 L6 7 M8 10 L9 6.5 M15 9 L18 7 M15 9 L14 5.5"/></svg>',
+  plasma: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 14 Q6 8 11 9 Q13 4 18 7 Q22 9 19 14 Q21 19 15 18 Q10 22 7 18 Q2 18 4 14 Z"/></svg>',
+  flame: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 21c-4 0-6-2.5-6-6 0-3 2-4 2.5-7 .3 2 1.5 2.5 1.5 4 1-1.5.5-4.5-1-7 4 1 6.5 5 6 8.5 1-1 1.5-2.5 1.5-2.5 1 1.5 1.5 3 1.5 4.5 0 3.5-2.5 6-6 6Z"/></svg>',
+  mountains: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M2 19 L8 10 L11 14 L15 7 L22 19Z"/><circle cx="17.5" cy="6" r="1.4" fill="currentColor" stroke="none"/></svg>',
+  polyspiral: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><polygon points="12,3 20,9 17,19 7,19 4,9"/><polygon points="12,7 16.5,10.2 15,15.3 9,15.3 7.5,10.2"/><polygon points="12,10 14,11.4 13.3,13.8 10.7,13.8 10,11.4"/></svg>'
+};
+
+const iconRail = document.getElementById('iconRail');
+
+function makeIconBtn(opt) {
+  const btn = document.createElement('div');
+  btn.className = 'icon-btn';
+  btn.dataset.value = opt.value;
+  btn.title = opt.textContent;
+  btn.innerHTML = ICONS[opt.value] || '';
+  btn.addEventListener('click', () => {
+    typeSelect.value = opt.value;
+    typeSelect.dispatchEvent(new Event('change'));
+  });
+  return btn;
+}
+
+function buildIconRail() {
+  iconRail.innerHTML = '';
+  Array.from(typeSelect.children).forEach(node => {
+    if (node.tagName === 'OPTGROUP') {
+      Array.from(node.children).forEach(opt => iconRail.appendChild(makeIconBtn(opt)));
+      const gap = document.createElement('div');
+      gap.className = 'icon-group-gap';
+      iconRail.appendChild(gap);
+    } else if (node.tagName === 'OPTION') {
+      iconRail.appendChild(makeIconBtn(node));
+    }
+  });
+}
+
+function syncIconRailActive(type) {
+  iconRail.querySelectorAll('.icon-btn').forEach(el => {
+    el.classList.toggle('active', el.dataset.value === type);
+  });
+}
+
+function syncIconRailHeight() {
+  iconRail.style.height = canvasWrap.offsetHeight + 'px';
+}
+window.addEventListener('resize', syncIconRailHeight);
+
+buildIconRail();
 
 const DIMENSION_INFO = {
   mandelbrot: 'D = 2 (граница множества, теорема Шишикуры)',
@@ -843,6 +968,7 @@ function updateControlsForType(type) {
     ? `<div><b>Автор:</b> ${hi.author}</div><div><b>Название:</b> ${hi.name}</div><div class="fact"><b>Факт:</b> ${hi.fact}</div>`
     : '';
   syncTypeMenuActive(type);
+  syncIconRailActive(type);
 }
 
 function draw() {
@@ -1717,6 +1843,7 @@ resetBtn.addEventListener('click', () => {
 updateControlsForType(typeSelect.value);
 view = defaultView(typeSelect.value);
 animateBuild(typeSelect.value);
+syncIconRailHeight();
 </script>
 </body>
 </html>
