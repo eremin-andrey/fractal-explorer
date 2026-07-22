@@ -432,11 +432,14 @@
         <option value="burningship">Burning Ship</option>
         <option value="multibrot">Мультиброт (z^n)</option>
         <option value="newton">Фрактал Ньютона</option>
+        <option value="buddhabrot">Buddhabrot</option>
       </optgroup>
       <optgroup label="IFS / самоподобные фигуры">
         <option value="sierpinski">Треугольник Серпинского</option>
         <option value="carpet">Ковёр Серпинского</option>
         <option value="fern">Папоротник Барнсли</option>
+        <option value="cantordust">Пыль Кантора (2D)</option>
+        <option value="vicsek">Фрактал Вичека</option>
       </optgroup>
       <optgroup label="Кривые (L-системы)">
         <option value="koch">Снежинка Коха</option>
@@ -445,12 +448,18 @@
         <option value="peano">Кривая Пеано</option>
         <option value="dragon">Дракон Хартера-Хейтуэя</option>
         <option value="minkowski">Кривая Минковского</option>
+        <option value="levyc">Кривая Леви (C-curve)</option>
+        <option value="arrowhead">Стрела Серпинского</option>
       </optgroup>
       <optgroup label="Деревья и рекурсия">
         <option value="tree">Дерево Пифагора</option>
         <option value="htree">H-дерево</option>
         <option value="cantor">Множество Кантора</option>
         <option value="menger">Губка Менгера (проекция)</option>
+        <option value="tsquare">T-квадрат</option>
+        <option value="hexaflake">Гексафлейк</option>
+        <option value="tetrix">Тетрикс</option>
+        <option value="apollonian">Гаскет Аполлония</option>
       </optgroup>
       <optgroup label="Процедурные">
         <option value="dla">Броуновское дерево (DLA)</option>
@@ -458,6 +467,18 @@
         <option value="flame">Фрактальное пламя</option>
         <option value="mountains">Горная гряда</option>
         <option value="polyspiral">Многоугольная спираль</option>
+      </optgroup>
+      <optgroup label="Хаос и динамические системы">
+        <option value="lorenz">Аттрактор Лоренца</option>
+        <option value="henon">Аттрактор Энона</option>
+        <option value="clifford">Аттрактор Клиффорда</option>
+        <option value="dejong">Аттрактор де Йонга</option>
+        <option value="bifurcation">Бифуркационная диаграмма</option>
+        <option value="lyapunov">Фрактал Ляпунова</option>
+      </optgroup>
+      <optgroup label="Патологические функции">
+        <option value="takagi">Функция Такаги (Бланманже)</option>
+        <option value="weierstrass">Функция Вейерштрасса</option>
       </optgroup>
     </select>
   </div>
@@ -637,7 +658,7 @@ const ratioBVal = document.getElementById('ratioBVal');
 const W = canvas.width, H = canvas.height;
 
 const ESCAPE_TYPES = new Set(['mandelbrot', 'julia', 'burningship', 'multibrot', 'newton']);
-const RANDOM_TYPES = new Set(['dla', 'plasma', 'flame', 'mountains', 'polyspiral']);
+const RANDOM_TYPES = new Set(['dla', 'plasma', 'flame', 'mountains', 'polyspiral', 'buddhabrot']);
 
 // ---------- Custom type dropdown ----------
 const typeTrigger = document.getElementById('typeTrigger');
@@ -730,7 +751,24 @@ const ICONS = {
   plasma: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 14 Q6 8 11 9 Q13 4 18 7 Q22 9 19 14 Q21 19 15 18 Q10 22 7 18 Q2 18 4 14 Z"/></svg>',
   flame: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 21c-4 0-6-2.5-6-6 0-3 2-4 2.5-7 .3 2 1.5 2.5 1.5 4 1-1.5.5-4.5-1-7 4 1 6.5 5 6 8.5 1-1 1.5-2.5 1.5-2.5 1 1.5 1.5 3 1.5 4.5 0 3.5-2.5 6-6 6Z"/></svg>',
   mountains: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M2 19 L8 10 L11 14 L15 7 L22 19Z"/><circle cx="17.5" cy="6" r="1.4" fill="currentColor" stroke="none"/></svg>',
-  polyspiral: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><polygon points="12,3 20,9 17,19 7,19 4,9"/><polygon points="12,7 16.5,10.2 15,15.3 9,15.3 7.5,10.2"/><polygon points="12,10 14,11.4 13.3,13.8 10.7,13.8 10,11.4"/></svg>'
+  polyspiral: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><polygon points="12,3 20,9 17,19 7,19 4,9"/><polygon points="12,7 16.5,10.2 15,15.3 9,15.3 7.5,10.2"/><polygon points="12,10 14,11.4 13.3,13.8 10.7,13.8 10,11.4"/></svg>',
+  buddhabrot: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="3"/><path d="M6 20c0-5 2.5-8 6-8s6 3 6 8"/><path d="M4 14 L2 11 M20 14 L22 11 M8 4 L6 2 M16 4 L18 2"/></svg>',
+  cantordust: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="3" y="3" width="3" height="3"/><rect x="18" y="3" width="3" height="3"/><rect x="3" y="18" width="3" height="3"/><rect x="18" y="18" width="3" height="3"/><rect x="9.5" y="9.5" width="1.4" height="1.4"/><rect x="13" y="9.5" width="1.4" height="1.4"/><rect x="9.5" y="13" width="1.4" height="1.4"/><rect x="13" y="13" width="1.4" height="1.4"/></svg>',
+  vicsek: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6Z"/></svg>',
+  levyc: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M18 5 C8 5 4 10 8 13 C11 15 6 16 6 19"/></svg>',
+  arrowhead: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><path d="M12 4 L20 19 L4 19 Z"/><path d="M8 12 L12 12 L10 15 M14 12 L16 15"/></svg>',
+  tsquare: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="8" y="8" width="8" height="8"/><rect x="4" y="4" width="4" height="4"/><rect x="16" y="4" width="4" height="4"/><rect x="4" y="16" width="4" height="4"/><rect x="16" y="16" width="4" height="4"/></svg>',
+  hexaflake: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><polygon points="12,3 19,7.5 19,16.5 12,21 5,16.5 5,7.5"/><polygon points="12,9.5 14.3,11 14.3,13.7 12,15.2 9.7,13.7 9.7,11"/></svg>',
+  tetrix: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><path d="M12 3 L21 19 H3 Z"/><path d="M9.5 13 H14.5 L12 8 Z"/></svg>',
+  apollonian: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="12" cy="12" r="9"/><circle cx="8.6" cy="12" r="3.4"/><circle cx="16" cy="9.4" r="2.6"/><circle cx="16" cy="15.4" r="2.2"/></svg>',
+  lorenz: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M13 4c-4 0-6 3-4 6 1 1.5 3 1 3 3s-3 1-3 3c0 3 4 4 7 2"/></svg>',
+  henon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 17 Q11 4 20 11 Q13 9 7 13 Q5 14.5 4 17Z"/></svg>',
+  clifford: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M4 6c6 1 4 6 0 7s2 8 8 5M20 6c-6 1-4 6 0 7s-2 8-8 5"/></svg>',
+  dejong: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M12 3c-5 2-7 8-3 10-4 2-2 8 3 8s7-6 3-8c4-2 2-8-3-10Z"/></svg>',
+  bifurcation: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 12 H9 M9 12 L20 4 M9 12 L14 9 M9 12 L20 20 M9 12 L14 15"/></svg>',
+  lyapunov: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="3" y="3" width="18" height="18"/><path d="M3 15 Q9 9 21 9"/></svg>',
+  takagi: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M2 18 L5 8 L8 18 L11 11 L14 18 L17 8 L20 18 L22 14"/></svg>',
+  weierstrass: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M2 12 Q4 6 6 12 T10 12 T14 8 T17 14 T22 10"/></svg>'
 };
 
 const iconRail = document.getElementById('iconRail');
@@ -796,7 +834,24 @@ const DIMENSION_INFO = {
   plasma: 'зависит от коэффициента шероховатости; типично D ≈ 2.5 для такой поверхности',
   flame: 'нет единой формулы — зависит от параметров аффинных преобразований',
   mountains: 'D = 2 - H, где H — показатель Хёрста; для профиля хребта обычно D ≈ 1.3-1.5 — как у настоящих горных силуэтов',
-  polyspiral: 'формально не фрактал в строгом смысле — счётное объединение обычных многоугольников (D = 1), но самоподобная спираль за счёт постоянного коэффициента сжатия на каждом шаге'
+  polyspiral: 'формально не фрактал в строгом смысле — счётное объединение обычных многоугольников (D = 1), но самоподобная спираль за счёт постоянного коэффициента сжатия на каждом шаге',
+  buddhabrot: 'формально та же, что у границы Мандельброта (D = 2), но плотность траекторий образует собственную нечётко определённую текстуру',
+  cantordust: 'D = log 4 / log 3 ≈ 1.262 (произведение двух канторовских множеств размерности log 2 / log 3 каждое)',
+  vicsek: 'D = log 5 / log 3 ≈ 1.465',
+  levyc: 'D = log 2 / log √2 = 2 (в пределе плотно самопересекается и заполняет область плоскости)',
+  arrowhead: 'D = log 3 / log 2 ≈ 1.585 (та же фигура и та же размерность, что у треугольника Серпинского)',
+  tsquare: 'формально D = 2 при бесконечном числе итераций (фигура заполняет площадь), хотя граница остаётся изрезанной на любом конечном шаге',
+  hexaflake: 'D = log 7 / log 3 ≈ 1.771',
+  tetrix: 'D = log 4 / log 2 = 2 (объём стремится к нулю, а площадь поверхности не уменьшается)',
+  apollonian: 'D ≈ 1.3057 (размерность упаковки Аполлония — константа Мелзака, известна только численно)',
+  lorenz: 'D ≈ 2.06 (корреляционная размерность аттрактора — оценена численно, точного значения нет)',
+  henon: 'D ≈ 1.26 (численная оценка корреляционной размерности)',
+  clifford: 'нет точного значения — дробная корреляционная размерность, зависящая от параметров a,b,c,d',
+  dejong: 'нет точного значения — как и у аттрактора Клиффорда, дробная корреляционная размерность',
+  bifurcation: 'диаграмма в целом не имеет единой размерности, но в хаотической области сечение при каждом r образует канторовское множество',
+  lyapunov: 'нет фиксированного значения — граница между устойчивой и хаотической зонами фрактальна',
+  takagi: 'сам график имеет топологическую размерность 1, но нигде не дифференцируем — «бесконечно изрезан» в любом масштабе',
+  weierstrass: 'размерность графика лежит между 1 и 2 в зависимости от параметров a, b — чем плотнее упакованы частоты, тем она выше'
 };
 
 const HISTORY_INFO = {
@@ -914,6 +969,91 @@ const HISTORY_INFO = {
     author: 'Классический пример из геометрии и линейной алгебры; систематически исследовал французский математик Гастон Дарбу в 1878 году (случай деления пополам иногда называют «задачей Дарбу»)',
     name: 'Устоявшегося общепринятого названия нет — здесь мы называем результат «многоугольной спиралью» по виду фигуры',
     fact: 'Какой бы ни была исходная фигура, спираль стремится к эллипсу: все «многоугольные» гармоники формы затухают с разной скоростью, и быстрее всех выживает ровно пара сопряжённых — а сумма именно двух таких вращающихся гармоник и есть параметрическое уравнение эллипса (строго через собственные числа циркулянтных матриц это показал П. Дж. Дэвис в книге Circulant Matrices, 1979)'
+  },
+  buddhabrot: {
+    author: 'Мелинда Грин, программистка, 1993',
+    name: 'Название — по сходству получившегося силуэта с изображением сидящего Будды',
+    fact: 'Парадокс метода: рисуются траектории точек, которые НЕ входят в множество Мандельброта (то есть в итоге убегают на бесконечность) — а не самих точек множества'
+  },
+  cantordust: {
+    author: 'Георг Кантор, 1883 — как и одномерный вариант множества',
+    name: 'Двумерное произведение множества Кантора самого на себя по обеим осям',
+    fact: 'Несмотря на нулевую площадь, пыль Кантора остаётся несчётной — точек в ней столько же, сколько во всей плоскости'
+  },
+  vicsek: {
+    author: 'Тамаш Вичек, венгерский физик, 1980-е — изучал модели агрегации и роста кластеров',
+    name: 'Также известен как «box fractal» за форму базового элемента',
+    fact: 'Строится тем же делением квадрата на 9 частей, что и ковёр Серпинского — но при другом выборе сохраняемых ячеек получается совсем другая, крестообразная форма'
+  },
+  levyc: {
+    author: 'Поль Леви, французский математик, 1938',
+    name: '«C-curve» — на первых итерациях фигура напоминает букву C',
+    fact: 'Строится по тому же принципу, что и дракон Хартера-Хейтуэя, но с углом излома 45° вместо 90° — и даёт куда более плотный, самопересекающийся узор'
+  },
+  arrowhead: {
+    author: 'Формализована в рамках теории L-систем Аристидом Линденмайером и Пшемыславом Прусинкевичем, 1980-е',
+    name: '«Стрела» — за характерную форму зубцов, напоминающих наконечники стрел',
+    fact: 'Доказывает, что треугольник Серпинского можно нарисовать одной непрерывной линией, ни разу не отрывая пера от бумаги — в отличие от классического построения подразделением треугольников'
+  },
+  tsquare: {
+    author: 'Устоявшегося конкретного автора нет — известен с 1980-х как учебный пример в компьютерной графике',
+    name: 'Назван по букве «T», которую образуют пересекающиеся квадраты на первых итерациях',
+    fact: 'Несмотря на простоту правила (квадрат вдвое меньшего размера в каждом углу), фигура почти полностью покрывает исходную площадь уже за 5-6 итераций'
+  },
+  hexaflake: {
+    author: 'Прямое обобщение конструкции Серпинского на шестиугольную решётку; конкретного первооткрывателя не зафиксировано',
+    name: '«Флейк» (снежинка) — по аналогии со снежинкой Коха, хотя строится по принципу подразделения, как у Серпинского',
+    fact: 'Использует ровно те же 7 копий в масштабе 1/3, что и губка Менгера использует 20 копий в масштабе 1/3 — просто в двух измерениях и с другим правилом отбора клеток'
+  },
+  tetrix: {
+    author: 'Прямое обобщение треугольника Серпинского на 3D; конкретного первооткрывателя не зафиксировано, известен с середины XX века',
+    name: 'Название — сокращение от «тетраэдр», по аналогии с «Менгером» и «Мандельбротом»',
+    fact: 'В отличие от губки Менгера, у тетрикса объём стремится к нулю, а площадь поверхности не уменьшается — фигура «худеет», не теряя оболочки'
+  },
+  apollonian: {
+    author: 'Задача о взаимно касающихся окружностях — Аполлоний Пергский, III век до н.э.; формулу для их кривизны нашёл Рене Декарт в 1643',
+    name: 'Назван в честь Аполлония, впервые системно исследовавшего задачи о касающихся окружностях',
+    fact: 'Теорема Декарта связывает кривизны (величины, обратные радиусу) четырёх взаимно касающихся окружностей чисто алгебраически — без единой тригонометрической функции'
+  },
+  lorenz: {
+    author: 'Эдвард Лоренц, американский метеоролог, 1963 — при численном моделировании атмосферной конвекции',
+    name: 'Названа по фамилии автора; в культуре известна как источник «эффекта бабочки»',
+    fact: 'Лоренц открыл эффект случайно: округлил начальное значение при повторном запуске модели с 6 знаков после запятой до 3 — и получил совершенно другую погоду'
+  },
+  henon: {
+    author: 'Мишель Энон, французский астроном, 1976',
+    name: 'Названа по фамилии автора — придумал её как упрощённую модель более сложной астрономической системы, которую изучал',
+    fact: 'Всего два умножения и одно сложение на каждой итерации — но траектория никогда не повторяется и заметает канторовскую структуру в поперечном сечении'
+  },
+  clifford: {
+    author: 'Названа в честь Клиффорда Пиковера, популяризировавшего такие карты в 1990-х',
+    name: 'Один из класса «странных аттракторов Пиковера» — простых итерируемых тригонометрических карт',
+    fact: 'Незначительное изменение любого из 4 параметров полностью меняет форму — от простых петель до сложных перьевых узоров'
+  },
+  dejong: {
+    author: 'Питер де Йонг, программист, конец 1980-х',
+    name: 'Назван по фамилии автора, открывшего его при экспериментах с простыми итерируемыми функциями на домашнем компьютере',
+    fact: 'Использует только синусы и косинусы без умножения переменных друг на друга — и всё равно даёт хаотическую, фрактальную на вид динамику'
+  },
+  bifurcation: {
+    author: 'Логистическое отображение как модель роста популяции предложил Пьер Ферхюльст в 1838; хаотическое поведение и саму диаграмму подробно исследовал Митчелл Фейгенбаум в 1975-76',
+    name: '«Бифуркация» — раздвоение: при увеличении параметра r устойчивая точка каждый раз делится на две',
+    fact: 'Фейгенбаум обнаружил, что отношение расстояний между последовательными раздвоениями стремится к одной и той же константе ≈4.669 — причём для любого похожего по форме отображения, не только логистического'
+  },
+  lyapunov: {
+    author: 'Метод назван в честь Александра Ляпунова (теория устойчивости, 1892); как фрактальную картинку идею предложил Марио Маркус в 1990-х',
+    name: 'Раскраска по показателю Ляпунова — числу, определяющему, разбегаются ли близкие траектории (хаос) или сходятся (порядок)',
+    fact: 'Использует то же логистическое отображение, что и бифуркационная диаграмма, только чередуя два разных значения параметра по маске вроде AABAB'
+  },
+  takagi: {
+    author: 'Тэйдзи Такаги, японский математик, 1901 (позже независимо переоткрыта под именем «функция Бланманже»)',
+    name: '«Бланманже» — по сходству графика с волнистой поверхностью одноимённого десерта',
+    fact: 'Один из первых явных примеров непрерывной нигде не дифференцируемой функции после знаменитой функции Вейерштрасса — но с гораздо более простой формулой'
+  },
+  weierstrass: {
+    author: 'Карл Вейерштрасс, немецкий математик, 1872',
+    name: 'Названа по фамилии автора — его доклад на эту тему считается поворотным моментом в математическом анализе',
+    fact: 'До Вейерштрасса математики верили, что непрерывная функция обязана быть дифференцируемой почти всюду — его пример шокировал современников и заставил пересмотреть основания анализа'
   }
 };
 
@@ -940,7 +1080,24 @@ const SLIDER_CONFIG = {
   plasma: { label: 'Детализация', min: 2, max: 9, def: 7 },
   flame: { label: 'Точек (×1000)', min: 5, max: 200, def: 60 },
   mountains: { label: 'Детализация', min: 2, max: 9, def: 8 },
-  polyspiral: { label: 'Итераций', min: 5, max: 250, def: 120 }
+  polyspiral: { label: 'Итераций', min: 5, max: 250, def: 120 },
+  buddhabrot: { label: 'Точек (×10000)', min: 5, max: 40, def: 20 },
+  cantordust: { label: 'Глубина', min: 0, max: 6, def: 5 },
+  vicsek: { label: 'Глубина', min: 0, max: 6, def: 4 },
+  levyc: { label: 'Итераций', min: 1, max: 18, def: 13 },
+  arrowhead: { label: 'Итераций', min: 1, max: 9, def: 7 },
+  tsquare: { label: 'Глубина', min: 0, max: 8, def: 6 },
+  hexaflake: { label: 'Глубина', min: 0, max: 4, def: 3 },
+  tetrix: { label: 'Глубина', min: 0, max: 6, def: 4 },
+  apollonian: { label: 'Глубина', min: 3, max: 9, def: 7 },
+  lorenz: { label: 'Итераций (×1000)', min: 2, max: 15, def: 9 },
+  henon: { label: 'Точек (×5000)', min: 2, max: 20, def: 10 },
+  clifford: { label: 'Точек (×10000)', min: 2, max: 15, def: 7 },
+  dejong: { label: 'Точек (×10000)', min: 2, max: 15, def: 7 },
+  bifurcation: { label: 'Точек на столбец', min: 20, max: 300, def: 100 },
+  lyapunov: { label: 'Итераций', min: 50, max: 400, def: 150 },
+  takagi: { label: 'Октав', min: 1, max: 16, def: 11 },
+  weierstrass: { label: 'Слагаемых', min: 1, max: 12, def: 9 }
 };
 
 // --- viewport state for escape-time fractals ---
@@ -1017,6 +1174,23 @@ function draw() {
     case 'flame': drawFlame(depth * 1000); break;
     case 'mountains': drawMountains(depth, parseInt(ridgeCount.value, 10)); break;
     case 'polyspiral': drawPolygonSpiral(depth, parseInt(ratioB.value, 10)); break;
+    case 'buddhabrot': drawBuddhabrot(depth * 10000); break;
+    case 'cantordust': drawCantorDust(depth); break;
+    case 'vicsek': drawVicsek(depth); break;
+    case 'levyc': drawLevyC(depth); break;
+    case 'arrowhead': drawArrowhead(depth); break;
+    case 'tsquare': drawTSquare(depth); break;
+    case 'hexaflake': drawHexaflake(depth); break;
+    case 'tetrix': drawTetrix(depth); break;
+    case 'apollonian': drawApollonian(depth); break;
+    case 'lorenz': drawLorenz(depth * 1000); break;
+    case 'henon': drawHenon(depth * 5000); break;
+    case 'clifford': drawClifford(depth * 10000); break;
+    case 'dejong': drawDeJong(depth * 10000); break;
+    case 'bifurcation': drawBifurcation(depth); break;
+    case 'lyapunov': drawLyapunov(depth); break;
+    case 'takagi': drawTakagi(depth); break;
+    case 'weierstrass': drawWeierstrass(depth); break;
   }
 }
 
@@ -1399,14 +1573,22 @@ function drawCantor(depth) {
   rec(40, W - 40, 0);
 }
 
-// ---------- Menger sponge (isometric projection) ----------
+// ---------- Menger sponge (isometric projection, rotating) ----------
+let mengerRotation = 0;
+let mengerAnimId = null;
+
 function drawMenger(depth) {
   const d = Math.min(depth, 3);
   const size0 = 160;
   const cos30 = Math.cos(Math.PI / 6), sin30 = Math.sin(Math.PI / 6);
+  const rotCos = Math.cos(mengerRotation), rotSin = Math.sin(mengerRotation);
 
+  function rotY(x, y, z) {
+    return { x: x * rotCos + z * rotSin, y, z: -x * rotSin + z * rotCos };
+  }
   function project(x, y, z) {
-    return { sx: W / 2 + (x - z) * cos30, sy: H / 2 + 60 - ((x + z) * sin30 - y) };
+    const r = rotY(x, y, z);
+    return { sx: W / 2 + (r.x - r.z) * cos30, sy: H / 2 + 60 - ((r.x + r.z) * sin30 - r.y) };
   }
   function drawFace(pts, color) {
     ctx.fillStyle = color;
@@ -1418,13 +1600,10 @@ function drawMenger(depth) {
     ctx.fill();
     ctx.stroke();
   }
-  function drawCube(x, y, z, size, depthLeft) {
+  const leaves = [];
+  function collectCubes(x, y, z, size, depthLeft) {
     if (depthLeft === 0) {
-      const p = (dx, dy, dz) => project(x + dx, y + dy, z + dz);
-      const s = size;
-      drawFace([p(0, s, 0), p(s, s, 0), p(s, s, s), p(0, s, s)], '#8fd3ff');
-      drawFace([p(0, 0, 0), p(0, s, 0), p(0, s, s), p(0, 0, s)], '#4a90c4');
-      drawFace([p(s, 0, 0), p(s, s, 0), p(s, s, s), p(s, 0, s)], '#6cb2e0');
+      leaves.push({ x, y, z, size });
       return;
     }
     const ns = size / 3;
@@ -1433,12 +1612,27 @@ function drawMenger(depth) {
         for (let iz = 0; iz < 3; iz++) {
           const onesCount = (ix === 1 ? 1 : 0) + (iy === 1 ? 1 : 0) + (iz === 1 ? 1 : 0);
           if (onesCount >= 2) continue; // skip face centers + core
-          drawCube(x + ix * ns, y + iy * ns, z + iz * ns, ns, depthLeft - 1);
+          collectCubes(x + ix * ns, y + iy * ns, z + iz * ns, ns, depthLeft - 1);
         }
       }
     }
   }
-  drawCube(-size0 / 2, -size0 / 2, -size0 / 2, size0, d);
+  collectCubes(-size0 / 2, -size0 / 2, -size0 / 2, size0, d);
+
+  // painter's algorithm: sort leaf cubes back-to-front along the (rotated) view axis
+  leaves.forEach(c => {
+    const cx = c.x + c.size / 2, cy = c.y + c.size / 2, cz = c.z + c.size / 2;
+    const r = rotY(cx, cy, cz);
+    c.depthKey = r.x + r.y + r.z;
+  });
+  leaves.sort((a, b) => a.depthKey - b.depthKey);
+
+  leaves.forEach(({ x, y, z, size: s }) => {
+    const p = (dx, dy, dz) => project(x + dx, y + dy, z + dz);
+    drawFace([p(0, s, 0), p(s, s, 0), p(s, s, s), p(0, s, s)], '#8fd3ff');
+    drawFace([p(0, 0, 0), p(0, s, 0), p(0, s, s), p(0, 0, s)], '#4a90c4');
+    drawFace([p(s, 0, 0), p(s, s, 0), p(s, s, s), p(s, 0, s)], '#6cb2e0');
+  });
 }
 
 // ---------- Brownian tree (DLA) ----------
@@ -1775,6 +1969,397 @@ function drawPolygonSpiral(depth, b) {
   }
 }
 
+// ---------- Buddhabrot ----------
+function drawBuddhabrot(samples) {
+  const density = new Float32Array(W * H);
+  const maxIter = 300;
+  const n = Math.min(samples, 400000);
+  const trajX = new Float32Array(maxIter), trajY = new Float32Array(maxIter);
+  for (let s = 0; s < n; s++) {
+    const cx = -2 + Math.random() * 3, cy = -1.5 + Math.random() * 3;
+    let x = 0, y = 0, count = 0, escaped = false;
+    for (let i = 0; i < maxIter; i++) {
+      const nx = x * x - y * y + cx, ny = 2 * x * y + cy;
+      x = nx; y = ny;
+      trajX[count] = x; trajY[count] = y; count++;
+      if (x * x + y * y > 4) { escaped = true; break; }
+    }
+    if (escaped) {
+      for (let i = 0; i < count; i++) {
+        const px = Math.floor((trajX[i] + 2) / 3 * W);
+        const py = Math.floor((trajY[i] + 1.5) / 3 * H);
+        if (px >= 0 && px < W && py >= 0 && py < H) density[py * W + px]++;
+      }
+    }
+  }
+  let maxD = 0;
+  for (const v of density) if (v > maxD) maxD = v;
+  const logMax = Math.log(maxD + 1) || 1;
+  const img = ctx.createImageData(W, H);
+  for (let i = 0; i < density.length; i++) {
+    const t = Math.log(density[i] + 1) / logMax;
+    const idx = i * 4;
+    img.data[idx] = t * 170; img.data[idx + 1] = t * 210; img.data[idx + 2] = 255 * Math.pow(t, 0.55);
+    img.data[idx + 3] = 255;
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
+// ---------- Cantor dust (2D) ----------
+function drawCantorDust(depth) {
+  const d = Math.min(depth, 6);
+  ctx.fillStyle = '#8fd3ff';
+  function rec(x, y, s, depthLeft) {
+    if (depthLeft === 0) { ctx.fillRect(x, y, s, s); return; }
+    const ns = s / 3;
+    rec(x, y, ns, depthLeft - 1);
+    rec(x + 2 * ns, y, ns, depthLeft - 1);
+    rec(x, y + 2 * ns, ns, depthLeft - 1);
+    rec(x + 2 * ns, y + 2 * ns, ns, depthLeft - 1);
+  }
+  const size = Math.min(W, H) - 30;
+  rec((W - size) / 2, (H - size) / 2, size, d);
+}
+
+// ---------- Vicsek fractal (box fractal) ----------
+function drawVicsek(depth) {
+  const d = Math.min(depth, 6);
+  ctx.fillStyle = '#ffb86b';
+  function rec(x, y, s, depthLeft) {
+    if (depthLeft === 0) { ctx.fillRect(x, y, s, s); return; }
+    const ns = s / 3;
+    rec(x + ns, y, ns, depthLeft - 1);
+    rec(x, y + ns, ns, depthLeft - 1);
+    rec(x + ns, y + ns, ns, depthLeft - 1);
+    rec(x + 2 * ns, y + ns, ns, depthLeft - 1);
+    rec(x + ns, y + 2 * ns, ns, depthLeft - 1);
+  }
+  const size = Math.min(W, H) - 30;
+  rec((W - size) / 2, (H - size) / 2, size, d);
+}
+
+// ---------- Lévy C curve ----------
+function drawLevyC(depth) {
+  const s = lsystemExpand('F', { F: '+F--F+' }, Math.min(depth, 16));
+  drawLSystemCurve(turtlePoints(s, 45, 0, new Set(['F'])), '#ff9d5c');
+}
+
+// ---------- Sierpinski arrowhead curve ----------
+function drawArrowhead(depth) {
+  const s = lsystemExpand('A', { A: 'B-A-B', B: 'A+B+A' }, Math.min(depth, 9));
+  drawLSystemCurve(turtlePoints(s, 60, 0, new Set(['A', 'B'])), '#5cd6ff');
+}
+
+// ---------- T-square ----------
+function drawTSquare(depth) {
+  const d = Math.min(depth, 8);
+  ctx.fillStyle = 'rgba(199,146,234,0.9)';
+  function rec(cx, cy, size, depthLeft) {
+    ctx.fillRect(cx - size / 2, cy - size / 2, size, size);
+    if (depthLeft === 0) return;
+    const ns = size / 2;
+    rec(cx - size / 2, cy - size / 2, ns, depthLeft - 1);
+    rec(cx + size / 2, cy - size / 2, ns, depthLeft - 1);
+    rec(cx - size / 2, cy + size / 2, ns, depthLeft - 1);
+    rec(cx + size / 2, cy + size / 2, ns, depthLeft - 1);
+  }
+  rec(W / 2, H / 2, Math.min(W, H) - 40, d);
+}
+
+// ---------- Hexaflake ----------
+function drawHexaflake(depth) {
+  const d = Math.min(depth, 4);
+  ctx.fillStyle = '#7fe0c0';
+  function hexPath(cx, cy, r) {
+    ctx.beginPath();
+    for (let i = 0; i < 6; i++) {
+      const a = Math.PI / 3 * i;
+      const px = cx + r * Math.cos(a), py = cy + r * Math.sin(a);
+      i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+  }
+  function rec(cx, cy, r, depthLeft) {
+    if (depthLeft === 0) { hexPath(cx, cy, r * 1.02); ctx.fill(); return; }
+    const nr = r / 3;
+    rec(cx, cy, nr, depthLeft - 1);
+    for (let i = 0; i < 6; i++) {
+      const a = Math.PI / 3 * i;
+      rec(cx + 2 * nr * Math.cos(a), cy + 2 * nr * Math.sin(a), nr, depthLeft - 1);
+    }
+  }
+  rec(W / 2, H / 2, Math.min(W, H) / 2 - 12, d);
+}
+
+// ---------- Tetrix (Sierpinski tetrahedron, iso projection) ----------
+let tetrixRotation = 0;
+let tetrixAnimId = null;
+
+function drawTetrix(depth) {
+  const d = Math.min(depth, 6);
+  const verts = [[1, 1, 1], [1, -1, -1], [-1, 1, -1], [-1, -1, 1]];
+  const rotCos = Math.cos(tetrixRotation), rotSin = Math.sin(tetrixRotation);
+  function project(p) {
+    const scale = Math.min(W, H) * 0.24;
+    const x = p[0] * rotCos + p[2] * rotSin;
+    const z = -p[0] * rotSin + p[2] * rotCos;
+    const rx = x * 0.866 - z * 0.5;
+    const ry = p[1] - (x * 0.5 + z * 0.866) * 0.5;
+    return { sx: W / 2 + rx * scale, sy: H / 2 + ry * scale + H * 0.06 };
+  }
+  function mid(a, b) { return [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2]; }
+  const shades = ['#4a90c4', '#6cb2e0', '#8fd3ff', '#3a729c'];
+  function rec(v, depthLeft) {
+    if (depthLeft === 0) {
+      const faces = [[0, 1, 2], [0, 1, 3], [0, 2, 3], [1, 2, 3]];
+      faces.forEach((f, i) => {
+        const p0 = project(v[f[0]]), p1 = project(v[f[1]]), p2 = project(v[f[2]]);
+        ctx.beginPath();
+        ctx.moveTo(p0.sx, p0.sy); ctx.lineTo(p1.sx, p1.sy); ctx.lineTo(p2.sx, p2.sy);
+        ctx.closePath();
+        ctx.fillStyle = shades[i];
+        ctx.fill();
+      });
+      return;
+    }
+    const m01 = mid(v[0], v[1]), m02 = mid(v[0], v[2]), m03 = mid(v[0], v[3]);
+    const m12 = mid(v[1], v[2]), m13 = mid(v[1], v[3]), m23 = mid(v[2], v[3]);
+    rec([v[0], m01, m02, m03], depthLeft - 1);
+    rec([m01, v[1], m12, m13], depthLeft - 1);
+    rec([m02, m12, v[2], m23], depthLeft - 1);
+    rec([m03, m13, m23, v[3]], depthLeft - 1);
+  }
+  rec(verts, d);
+}
+
+// ---------- Apollonian gasket ----------
+function apollonianRecurse(cA, cB, cC, exclude, depth, maxDepth, minR, out) {
+  const k4 = 2 * (cA.k + cB.k + cC.k) - exclude.k;
+  if (Math.abs(k4) < 1e-9) return;
+  const zx4 = (2 * (cA.k * cA.zx + cB.k * cB.zx + cC.k * cC.zx) - exclude.k * exclude.zx) / k4;
+  const zy4 = (2 * (cA.k * cA.zy + cB.k * cB.zy + cC.k * cC.zy) - exclude.k * exclude.zy) / k4;
+  const r4 = Math.abs(1 / k4);
+  if (r4 < minR) return;
+  out.push({ zx: zx4, zy: zy4, r: r4 });
+  if (depth >= maxDepth) return;
+  const c4 = { k: k4, zx: zx4, zy: zy4 };
+  if (!cC.outer) apollonianRecurse(cA, cB, c4, cC, depth + 1, maxDepth, minR, out);
+  if (!cB.outer) apollonianRecurse(cA, cC, c4, cB, depth + 1, maxDepth, minR, out);
+  if (!cA.outer) apollonianRecurse(cB, cC, c4, cA, depth + 1, maxDepth, minR, out);
+}
+function drawApollonian(depth) {
+  const maxDepth = Math.min(depth, 9);
+  const cx = W / 2, cy = H / 2, R = Math.min(W, H) / 2 - 8;
+  const c0 = { k: -1 / R, zx: 0, zy: 0, outer: true };
+  const c1 = { k: 2 / R, zx: -R / 2, zy: 0 };
+  const c2 = { k: 2 / R, zx: R / 2, zy: 0 };
+  const k3 = c0.k + c1.k + c2.k + 2 * Math.sqrt(c0.k * c1.k + c1.k * c2.k + c2.k * c0.k);
+  const c3top = { k: k3, zx: 0, zy: 2 * R / 3 };
+  const c3bot = { k: k3, zx: 0, zy: -2 * R / 3 };
+  const out = [
+    { zx: c1.zx, zy: c1.zy, r: 1 / c1.k },
+    { zx: c2.zx, zy: c2.zy, r: 1 / c2.k },
+    { zx: c3top.zx, zy: c3top.zy, r: 1 / c3top.k },
+    { zx: c3bot.zx, zy: c3bot.zy, r: 1 / c3bot.k }
+  ];
+  const minR = 1.2;
+  apollonianRecurse(c0, c1, c2, c3top, 1, maxDepth, minR, out);
+  apollonianRecurse(c0, c1, c2, c3bot, 1, maxDepth, minR, out);
+
+  ctx.beginPath();
+  ctx.arc(cx, cy, R, 0, Math.PI * 2);
+  ctx.strokeStyle = '#00fff2';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  const palette = ['#ff9d5c', '#7fe0c0', '#c792ea', '#5cd6ff', '#ff6ec7', '#9be15d'];
+  out.forEach((c, i) => {
+    ctx.beginPath();
+    ctx.arc(cx + c.zx, cy + c.zy, c.r, 0, Math.PI * 2);
+    ctx.strokeStyle = palette[i % palette.length];
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  });
+}
+
+// ---------- Lorenz attractor ----------
+function drawLorenz(steps) {
+  const n = Math.min(steps, 20000);
+  let x = 0.1, y = 0, z = 0;
+  const sigma = 10, rho = 28, beta = 8 / 3, dt = 0.008;
+  const pts = [];
+  for (let i = 0; i < n; i++) {
+    const dx = sigma * (y - x) * dt, dy = (x * (rho - z) - y) * dt, dz = (x * y - beta * z) * dt;
+    x += dx; y += dy; z += dz;
+    if (i > 60) pts.push({ x, y: z });
+  }
+  ctx.globalAlpha = 0.85;
+  drawLSystemCurve(pts, '#7fe0ff');
+  ctx.globalAlpha = 1;
+}
+
+// ---------- Hénon map ----------
+function drawHenon(n) {
+  const count = Math.min(n, 300000);
+  let x = 0, y = 0;
+  const a = 1.4, b = 0.3;
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  const xs = new Float32Array(count), ys = new Float32Array(count);
+  for (let i = 0; i < count; i++) {
+    const nx = 1 - a * x * x + y, ny = b * x;
+    x = nx; y = ny;
+    xs[i] = x; ys[i] = y;
+    if (x < minX) minX = x; if (x > maxX) maxX = x;
+    if (y < minY) minY = y; if (y > maxY) maxY = y;
+  }
+  const margin = 20;
+  const scale = Math.min((W - 2 * margin) / ((maxX - minX) || 1), (H - 2 * margin) / ((maxY - minY) || 1));
+  const offX = (W - (maxX - minX) * scale) / 2 - minX * scale;
+  const offY = (H - (maxY - minY) * scale) / 2 - minY * scale;
+  ctx.fillStyle = 'rgba(150,220,255,0.6)';
+  for (let i = 0; i < count; i++) ctx.fillRect(xs[i] * scale + offX, ys[i] * scale + offY, 1, 1);
+}
+
+// ---------- Clifford attractor ----------
+function drawClifford(n) {
+  const count = Math.min(n, 300000);
+  const a = -1.4, b = 1.6, c = 1.0, d = 0.7;
+  let x = 0.1, y = 0.1;
+  const xs = new Float32Array(count), ys = new Float32Array(count);
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  for (let i = 0; i < count; i++) {
+    const nx = Math.sin(a * y) + c * Math.cos(a * x);
+    const ny = Math.sin(b * x) + d * Math.cos(b * y);
+    x = nx; y = ny;
+    xs[i] = x; ys[i] = y;
+    if (x < minX) minX = x; if (x > maxX) maxX = x;
+    if (y < minY) minY = y; if (y > maxY) maxY = y;
+  }
+  const margin = 16;
+  const scale = Math.min((W - 2 * margin) / ((maxX - minX) || 1), (H - 2 * margin) / ((maxY - minY) || 1));
+  const offX = (W - (maxX - minX) * scale) / 2 - minX * scale;
+  const offY = (H - (maxY - minY) * scale) / 2 - minY * scale;
+  ctx.fillStyle = 'rgba(180,200,255,0.08)';
+  for (let i = 0; i < count; i++) ctx.fillRect(xs[i] * scale + offX, ys[i] * scale + offY, 1, 1);
+}
+
+// ---------- de Jong attractor ----------
+function drawDeJong(n) {
+  const count = Math.min(n, 300000);
+  const a = 1.4, b = -2.3, c = 2.4, d = -2.1;
+  let x = 0.1, y = 0.1;
+  const xs = new Float32Array(count), ys = new Float32Array(count);
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  for (let i = 0; i < count; i++) {
+    const nx = Math.sin(a * y) - Math.cos(b * x);
+    const ny = Math.sin(c * x) - Math.cos(d * y);
+    x = nx; y = ny;
+    xs[i] = x; ys[i] = y;
+    if (x < minX) minX = x; if (x > maxX) maxX = x;
+    if (y < minY) minY = y; if (y > maxY) maxY = y;
+  }
+  const margin = 16;
+  const scale = Math.min((W - 2 * margin) / ((maxX - minX) || 1), (H - 2 * margin) / ((maxY - minY) || 1));
+  const offX = (W - (maxX - minX) * scale) / 2 - minX * scale;
+  const offY = (H - (maxY - minY) * scale) / 2 - minY * scale;
+  ctx.fillStyle = 'rgba(255,190,150,0.08)';
+  for (let i = 0; i < count; i++) ctx.fillRect(xs[i] * scale + offX, ys[i] * scale + offY, 1, 1);
+}
+
+// ---------- Logistic map bifurcation diagram ----------
+function drawBifurcation(pointsPerColumn) {
+  const kept = Math.min(pointsPerColumn, 300);
+  ctx.fillStyle = 'rgba(180,255,220,0.55)';
+  for (let px = 0; px < W; px++) {
+    const r = 2.4 + (px / W) * 1.6;
+    let x = 0.5;
+    for (let i = 0; i < 300; i++) x = r * x * (1 - x);
+    for (let i = 0; i < kept; i++) {
+      x = r * x * (1 - x);
+      ctx.fillRect(px, H - x * H, 1, 1);
+    }
+  }
+}
+
+// ---------- Lyapunov fractal ----------
+function drawLyapunov(maxIter) {
+  const n = Math.min(maxIter, 400);
+  const img = ctx.createImageData(W, H);
+  const seq = 'AABAB';
+  for (let px = 0; px < W; px++) {
+    const a = 2 + (px / W) * 2;
+    for (let py = 0; py < H; py++) {
+      const b = 4 - (py / H) * 2;
+      let x = 0.5, lyap = 0;
+      for (let i = 0; i < n; i++) {
+        const r = seq[i % seq.length] === 'A' ? a : b;
+        x = r * x * (1 - x);
+        const deriv = Math.abs(r * (1 - 2 * x));
+        if (i > 20) lyap += Math.log(deriv + 1e-9);
+      }
+      lyap /= Math.max(1, n - 20);
+      const idx = (py * W + px) * 4;
+      if (lyap < 0) {
+        const t = Math.min(1, -lyap / 1.4);
+        img.data[idx] = 15; img.data[idx + 1] = 40 + t * 160; img.data[idx + 2] = 40 + t * 200;
+      } else {
+        const t = Math.min(1, lyap / 1.4);
+        img.data[idx] = 40 + t * 200; img.data[idx + 1] = 30 + t * 90; img.data[idx + 2] = 15;
+      }
+      img.data[idx + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
+// ---------- Takagi (Blancmange) curve ----------
+function drawTakagi(octaves) {
+  const n = Math.min(octaves, 16);
+  function s(x) { const f = x - Math.floor(x); return Math.min(f, 1 - f); }
+  const N = W;
+  const ys = new Float32Array(N + 1);
+  for (let px = 0; px <= N; px++) {
+    const xVal = (px / N) * 3;
+    let sum = 0;
+    for (let k = 0; k < n; k++) sum += s(xVal * Math.pow(2, k)) / Math.pow(2, k);
+    ys[px] = sum;
+  }
+  let minY = Infinity, maxY = -Infinity;
+  ys.forEach(v => { if (v < minY) minY = v; if (v > maxY) maxY = v; });
+  const pad = 20;
+  ctx.strokeStyle = '#7fe0ff'; ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  for (let px = 0; px <= N; px++) {
+    const t = (ys[px] - minY) / ((maxY - minY) || 1);
+    const py = H - pad - t * (H - 2 * pad);
+    px === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+}
+
+// ---------- Weierstrass function ----------
+function drawWeierstrass(terms) {
+  const n = Math.min(terms, 12);
+  const a = 0.5, b = 7, N = W;
+  const ys = new Float32Array(N + 1);
+  for (let px = 0; px <= N; px++) {
+    const xVal = (px / N) * 2 - 1;
+    let sum = 0;
+    for (let k = 0; k < n; k++) sum += Math.pow(a, k) * Math.cos(Math.pow(b, k) * Math.PI * xVal);
+    ys[px] = sum;
+  }
+  let minY = Infinity, maxY = -Infinity;
+  ys.forEach(v => { if (v < minY) minY = v; if (v > maxY) maxY = v; });
+  const pad = 20;
+  ctx.strokeStyle = '#ff6ec7'; ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  for (let px = 0; px <= N; px++) {
+    const t = (ys[px] - minY) / ((maxY - minY) || 1);
+    const py = H - pad - t * (H - 2 * pad);
+    px === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+}
+
 // ---------- Interaction: pan & zoom for escape-time fractals ----------
 let dragging = false, lastX = 0, lastY = 0;
 
@@ -1808,12 +2393,28 @@ window.addEventListener('mousemove', (e) => {
   draw();
 });
 
+function tetrixAnimLoop() {
+  if (typeSelect.value !== 'tetrix') { tetrixAnimId = null; return; }
+  tetrixRotation += 0.008;
+  draw();
+  tetrixAnimId = requestAnimationFrame(tetrixAnimLoop);
+}
+
+function mengerAnimLoop() {
+  if (typeSelect.value !== 'menger') { mengerAnimId = null; return; }
+  mengerRotation += 0.008;
+  draw();
+  mengerAnimId = requestAnimationFrame(mengerAnimLoop);
+}
+
 typeSelect.addEventListener('change', () => {
   const type = typeSelect.value;
   updateControlsForType(type);
   if (ESCAPE_TYPES.has(type)) view = defaultView(type);
   if (type === 'polyspiral') generatePolygonHull();
   animateBuild(type);
+  if (type === 'tetrix' && tetrixAnimId === null) tetrixAnimId = requestAnimationFrame(tetrixAnimLoop);
+  if (type === 'menger' && mengerAnimId === null) mengerAnimId = requestAnimationFrame(mengerAnimLoop);
 });
 depthInput.addEventListener('input', () => {
   buildToken++;
